@@ -1,0 +1,45 @@
+.settings {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.settings .ant-card {
+  margin-bottom: 24px;
+}
+
+.settings .ant-card-head-title {
+  color: #1f1f1f;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 1200px) {
+  .settings {
+    padding: 16px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .settings .ant-form-item {
+    margin-bottom: 16px;
+  }
+
+  .settings .ant-select,
+  .settings .ant-input {
+    width: 100% !important;
+  }
+
+  .settings .ant-btn {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .settings .ant-card-head-title {
+    font-size: 16px;
+  }
+
+  .settings .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+}

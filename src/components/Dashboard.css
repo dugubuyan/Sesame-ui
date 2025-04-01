@@ -1,0 +1,38 @@
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.dashboard h2 {
+  margin-bottom: 24px;
+  color: #1f1f1f;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 1200px) {
+  .dashboard {
+    padding: 16px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .dashboard .ant-row {
+    margin-left: -8px !important;
+    margin-right: -8px !important;
+  }
+
+  .dashboard .ant-col {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .dashboard .ant-col {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 16px;
+  }
+}
