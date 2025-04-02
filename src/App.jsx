@@ -5,6 +5,12 @@ import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-ro
 import sesameLogo from './assets/sesame-logo.svg';
 import { BinanceCoin, Ethereum } from '@thirdweb-dev/chain-icons';
 import './App.css';
+import { createThirdwebClient } from "thirdweb";
+import { useConnectModal } from "thirdweb/react";
+
+const client = createThirdwebClient({
+  clientId: "fa21b2ba088ed4d4d7c11fb43a8cd60d",
+});
 
 // 导入组件
 import Dashboard from './components/Dashboard';
@@ -18,9 +24,23 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [userAddress, setUserAddress] = useState('0x9145...Bbf5');
-
+  const { connect, isConnecting } = useConnectModal();
   const [selectedChain, setSelectedChain] = useState('');
 
+  async function handleConnect() {
+    const wallet = await connect( { client,size: "wide",welcomeScreen: {
+      title: "Connect Wallet",
+      subtitle: "Connecting your wallet is like “logging in” to Web3. Select your wallet from the options to get started.",
+      description: "Custom Description",
+    },theme:{
+      theme: "dark",
+      }
+  }); // opens the connect modal
+    console.log("connected to", wallet);
+    setIsConnected(true);
+    console.log("wallet address", wallet.getAccount());
+    setUserAddress(wallet.getAccount().address);
+  }
   const userMenu = {
     items: [
       {
@@ -145,10 +165,8 @@ function App() {
               <Button
                 type="primary"
                 style={{ height: '32px', marginLeft: '8px' }}
-                onClick={() => {
-                  setIsConnected(true);
-                  setUserAddress('0x9145...Bbf5');
-                }}
+                onClick={
+                  handleConnect}
               >
                 Connect
               </Button>
