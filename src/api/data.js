@@ -2,6 +2,11 @@
 const BASE_URL = 'http://localhost:3000';
 let authToken = null;
 
+// 清除authToken
+export const clearAuthToken = () => {
+  authToken = null;
+};
+
 // 登录并获取authToken
 export const login = async (walletAddress) => {
   try {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Layout, Menu, Avatar, Badge, Dropdown, Button, Select, Space, Divider } from 'antd';
+import { login, clearAuthToken } from './api/data';
 import { BellOutlined, LinkOutlined, UserOutlined, DashboardOutlined, PayCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import sesameLogo from './assets/sesame-logo.svg';
@@ -79,6 +80,8 @@ function App() {
               setUserAddress('');
               // 清除localStorage中的钱包地址
               localStorage.removeItem('connectedWalletAddress');
+              // 清除authToken
+              clearAuthToken();
               // 触发钱包断开连接事件
               const walletDisconnectedEvent = new CustomEvent('walletDisconnected');
               window.dispatchEvent(walletDisconnectedEvent);
