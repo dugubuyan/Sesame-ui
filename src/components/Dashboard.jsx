@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import { fetchDashboardData } from '../api/data';
+import { fetchDashboardData, saveSafeAccount } from '../api/data';
 
 const putSafeAccount = async (safeAddress) => {
   try {
-    // TODO: 调用后端API设置Safe Account
+    await saveSafeAccount(safeAddress);
     return true;
   } catch (error) {
     console.error('设置Safe Account失败:', error);
@@ -52,6 +52,7 @@ const Dashboard = () => {
         setTotalEmployees(data.totalEmployees);
         setMonthlyPayroll(data.totalPayroll);
         setBalance(data.pendingPayments);
+        setSafeAccount(data.safeAccount || '0x0');
       } catch (error) {
         console.error('获取仪表盘数据失败:', error);
         message.error('获取仪表盘数据失败');

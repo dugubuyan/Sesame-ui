@@ -1,0 +1,112 @@
+{
+  "api": {
+    "login": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/login",
+        "body": {
+          "walletAddress": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "authToken": "string"
+        }
+      }
+    },
+    "dashboard": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/dashboard",
+        "headers": {
+          "Auth-Token": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "totalEmployees": "number",
+          "totalPayroll": "number",
+          "pendingPayments": "number",
+          "recentTransactions": "array"
+        }
+      }
+    },
+    "payroll": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/payroll",
+        "headers": {
+          "Auth-Token": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "employees": "array"
+        }
+      }
+    },
+    "history": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/history",
+        "headers": {
+          "Auth-Token": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "transactions": "array"
+        }
+      }
+    },
+    "members": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/members",
+        "headers": {
+          "Auth-Token": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "members": "array"
+        }
+      }
+    },
+    "saveEmployee": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/employee",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "employeeData": "object"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "saveSafeAccount": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/safe-account",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "safeAddress": "string"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    }
+  }
+}

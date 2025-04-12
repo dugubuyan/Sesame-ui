@@ -266,51 +266,59 @@ const Settings = () => {
           </Form.Item>
         </Form>
       </Card>
-      <Card 
-        title="Members" 
-        style={{ marginTop: 24 }}
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAddSigner}>Add signer</Button>}
-      >
-        <Form form={form1} component={false}>
-          <Table
-            components={{
-              body: {
-                cell: EditableCell,
-              },
-            }}
-            columns={mergedColumns}
-            dataSource={members}
-            pagination={false}
-            rowClassName="editable-row"
-          />
-        </Form>
-        <div style={{ marginTop: 24 }}>
-          <Text strong>Required confirmations</Text>
-          <div style={{ marginTop: 12 }}>
-            <Space>
-              <Text>Any transaction requires the confirmation of:</Text>
-              {isEditingConfirmations ? (
-                <Space>
-                  <Input
-                    type="number"
-                    style={{ width: 60 }}
-                    defaultValue={requiredConfirmations}
-                    onPressEnter={(e) => handleConfirmationsChange(parseInt(e.target.value))}
-                  />
-                  <Text>out of {members.length} signers.</Text>
-                  <Button type="primary" size="small" onClick={() => setIsEditingConfirmations(false)}>确定</Button>
-                  <Button size="small" onClick={() => setIsEditingConfirmations(false)}>取消</Button>
-                </Space>
-              ) : (
-                <Space>
-                  <Text>{requiredConfirmations} out of {members.length} signers.</Text>
-                  <Button type="primary" onClick={() => setIsEditingConfirmations(true)}>Change</Button>
-                </Space>
-              )}
-            </Space>
+      {/* 只有在safeAccount设置后才显示Members和Required confirmations */}
+      {safeAccount && (
+        <Card title="Members" 
+          style={{ marginTop: 24 }}
+        >
+          <Form form={form1} component={false}>
+            <Table
+              components={{
+                body: {
+                  cell: EditableCell,
+                },
+              }}
+              columns={mergedColumns.map(col => ({
+                ...col,
+                render: col.key === 'actions' ? null : col.render
+              }))}
+              dataSource={members}
+              pagination={false}
+              rowClassName="editable-row"
+            />
+          </Form>
+          <div style={{ marginTop: 24 }}>
+            <Text strong>Required confirmations</Text>
+            <div style={{ marginTop: 12 }}>
+              <Space>
+                <Text>Any transaction requires the confirmation of:</Text>
+                <Text>{requiredConfirmations} out of {members.length} signers.</Text>
+              </Space>
+            </div>
           </div>
-        </div>
-      </Card>
+          {/* 以下是编辑相关的代码，暂时注释起来
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAddSigner}>Add signer</Button>}
+          {isEditingConfirmations ? (
+            <Space>
+              <Input
+                type="number"
+                style={{ width: 60 }}
+                defaultValue={requiredConfirmations}
+                onPressEnter={(e) => handleConfirmationsChange(parseInt(e.target.value))}
+              />
+              <Text>out of {members.length} signers.</Text>
+              <Button type="primary" size="small" onClick={() => setIsEditingConfirmations(false)}>确定</Button>
+              <Button size="small" onClick={() => setIsEditingConfirmations(false)}>取消</Button>
+            </Space>
+          ) : (
+            <Space>
+              <Text>{requiredConfirmations} out of {members.length} signers.</Text>
+              <Button type="primary" onClick={() => setIsEditingConfirmations(true)}>Change</Button>
+            </Space>
+          )}
+          */}
+        </Card>
+      )}
     </div>
   );
 };

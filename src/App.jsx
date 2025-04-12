@@ -28,24 +28,36 @@ function App() {
   const [selectedChain, setSelectedChain] = useState('');
 
   async function handleConnect() {
-    const wallet = await connect( { client,size: "wide",welcomeScreen: {
-      title: "Connect Wallet",
-      subtitle: "Connecting your wallet is like logging in to Web3. Select your wallet from the options to get started.",
-      description: "Custom Description",
-    },theme:{
-      theme: "dark",
-      }
-  }); // opens the connect modal
-    console.log("connected to", wallet);
-    setIsConnected(true);
-    const address = wallet.getAccount().address;
-    console.log("wallet address", address);
-    setUserAddress(address);
-    // 保存钱包地址到localStorage
-    localStorage.setItem('connectedWalletAddress', address);
-    // 触发钱包连接事件
-    const walletConnectedEvent = new CustomEvent('walletConnected');
-    window.dispatchEvent(walletConnectedEvent);
+    try {
+      const wallet = await connect( { client,size: "wide",welcomeScreen: {
+        title: "Connect Wallet",
+        subtitle: "Connecting your wallet is like \"logging in\" to Web3. Select your wallet from the options to get started.",
+        description: "Custom Description",
+      },theme:{
+        theme: "dark",
+        }
+    }); // opens the connect modal
+      console.log("connected to", wallet);
+      setIsConnected(true);
+      const address = wallet.getAccount().address;
+      console.log("wallet address", address);
+      setUserAddress(address);
+      // 保存钱包地址到localStorage
+      localStorage.setItem('connectedWalletAddress', address);
+      
+      // 调用登录接口获取authToken
+      await login(address);
+      
+      // 触发钱包连接事件
+      const walletConnectedEvent = new CustomEvent('walletConnected');
+      window.dispatchEvent(walletConnectedEvent);
+    } catch (error) {
+      console.error('连接钱包或登录失败:', error);
+      message.error('连接钱包或登录失败');
+      setIsConnected(false);
+      setUserAddress('');
+      localStorage.removeItem('connectedWalletAddress');
+    }
 }
   const userMenu = {
     items: [
