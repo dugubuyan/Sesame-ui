@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, Avatar, Space, Table, Typography, Tooltip, message } from 'antd';
 import { EditOutlined, PlusOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import { fetchMembersData } from '../api/data';
 
 const { Text } = Typography;
 
@@ -11,18 +12,49 @@ const Settings = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [userName, setUserName] = useState('Alex');
   const [editingKey, setEditingKey] = useState('');
-  const [members, setMembers] = useState([
-    {
-      key: '1',
-      name: 'signer0',
-      address: '0x9145CEb6B60b656F28edC11dc26479DEb7e8Bbf5',
-    },
-    {
-      key: '2',
-      name: 'signer1',
-      address: '0x7eB944E6f1A513c48DB0BBE7687233aED3ff61DD',
-    },
-  ]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const getMembers = async () => {
+      try {
+        setLoading(true);
+        const walletAddress = localStorage.getItem('connectedWalletAddress');
+        if (!walletAddress) {
+          console.log('钱包未连接');
+          setMembers([]);
+          return;
+        }
+        const data = await fetchMembersData(walletAddress);
+        setMembers(data.members.map((member, index) => ({
+          key: String(index + 1),
+          ...member
+        })));
+      } catch (error) {
+        console.error('获取成员数据失败:', error);
+        message.error('获取成员数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getMembers();
+
+    // 监听钱包连接和断开连接事件
+    const handleWalletConnected = () => {
+      getMembers();
+    };
+    const handleWalletDisconnected = () => {
+      setMembers([]);
+    };
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
+  }, []);
 
   const isEditable = (record) => record.key === editingKey;
 

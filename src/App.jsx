@@ -22,15 +22,15 @@ const { Header, Content, Sider } = Layout;
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
-  const [userAddress, setUserAddress] = useState('0x9145...Bbf5');
+  const [isConnected, setIsConnected] = useState(false);
+  const [userAddress, setUserAddress] = useState('');
   const { connect, isConnecting } = useConnectModal();
   const [selectedChain, setSelectedChain] = useState('');
 
   async function handleConnect() {
     const wallet = await connect( { client,size: "wide",welcomeScreen: {
       title: "Connect Wallet",
-      subtitle: "Connecting your wallet is like “logging in” to Web3. Select your wallet from the options to get started.",
+      subtitle: "Connecting your wallet is like logging in to Web3. Select your wallet from the options to get started.",
       description: "Custom Description",
     },theme:{
       theme: "dark",
@@ -38,9 +38,15 @@ function App() {
   }); // opens the connect modal
     console.log("connected to", wallet);
     setIsConnected(true);
-    console.log("wallet address", wallet.getAccount());
-    setUserAddress(wallet.getAccount().address);
-  }
+    const address = wallet.getAccount().address;
+    console.log("wallet address", address);
+    setUserAddress(address);
+    // 保存钱包地址到localStorage
+    localStorage.setItem('connectedWalletAddress', address);
+    // 触发钱包连接事件
+    const walletConnectedEvent = new CustomEvent('walletConnected');
+    window.dispatchEvent(walletConnectedEvent);
+}
   const userMenu = {
     items: [
       {
@@ -59,6 +65,11 @@ function App() {
             <Button type="default" danger block style={{ height: '36px' }} onClick={() => {
               setIsConnected(false);
               setUserAddress('');
+              // 清除localStorage中的钱包地址
+              localStorage.removeItem('connectedWalletAddress');
+              // 触发钱包断开连接事件
+              const walletDisconnectedEvent = new CustomEvent('walletDisconnected');
+              window.dispatchEvent(walletDisconnectedEvent);
             }}>Disconnect</Button>
           </div>
         ),
@@ -95,7 +106,7 @@ function App() {
             <span>Sesame Pay</span>
           </div>
           <div className="header-right">
-            <Badge count={5} className="notification-badge">
+            <Badge count={0} className="notification-badge">
               <BellOutlined className="header-icon" />
             </Badge>
             <Divider type="vertical" style={{ height: '24px' }} />

@@ -1,42 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Divider } from 'antd';
+import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { fetchDashboardData } from '../api/data';
 
-// 模拟从后端获取仪表盘数据的函数
-const fetchDashboardData = async () => {
-  // 这里将来会实现真正的API调用
-  // 暂时返回默认值
-  return {
-    safeAccount: '0x0',
-    totalEmployees: 128,
-    monthlyPayroll: 256789,
-    balance: 100.12
-  };
+const putSafeAccount = async (safeAddress) => {
+  try {
+    // TODO: 调用后端API设置Safe Account
+    return true;
+  } catch (error) {
+    console.error('设置Safe Account失败:', error);
+    throw error;
+  }
 };
 
 const Dashboard = () => {
-  // 初始化所有状态
   const [safeAccount, setSafeAccount] = useState('0x0');
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [monthlyPayroll, setMonthlyPayroll] = useState(0);
   const [balance, setBalance] = useState(0);
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+
+  const handleSetAccount = async (values) => {
+    try {
+      setLoading(true);
+      await putSafeAccount(values.safeAccount);
+      setSafeAccount(values.safeAccount);
+      setIsModalOpen(false);
+      message.success('Safe Account设置成功');
+    } catch (error) {
+      message.error('设置Safe Account失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // 组件挂载时获取仪表盘数据
     const getDashboardData = async () => {
       try {
-        const data = await fetchDashboardData();
-        setSafeAccount(data.safeAccount);
+        // 从localStorage获取钱包地址
+        const walletAddress = localStorage.getItem('connectedWalletAddress');
+        if (!walletAddress) {
+          console.log('钱包未连接');
+          setTotalEmployees(0);
+          setMonthlyPayroll(0);
+          setBalance(0);
+          return;
+        }
+        const data = await fetchDashboardData(walletAddress);
         setTotalEmployees(data.totalEmployees);
-        setMonthlyPayroll(data.monthlyPayroll);
-        setBalance(data.balance);
+        setMonthlyPayroll(data.totalPayroll);
+        setBalance(data.pendingPayments);
       } catch (error) {
         console.error('获取仪表盘数据失败:', error);
+        message.error('获取仪表盘数据失败');
       }
     };
     
     getDashboardData();
-  }, []); // 空依赖数组表示只在组件挂载时执行一次
+
+    // 监听钱包连接和断开连接事件
+    const handleWalletConnected = () => {
+      getDashboardData();
+    };
+    const handleWalletDisconnected = () => {
+      setTotalEmployees(0);
+      setMonthlyPayroll(0);
+      setBalance(0);
+    };
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
+  }, []); // 保持空依赖数组，但通过事件监听器响应钱包连接状态
   return (
     <div className="dashboard">
       <h2>Overview</h2>
@@ -71,8 +111,36 @@ const Dashboard = () => {
         <Col span={18} style={{ display: 'flex', alignItems: 'center' }}>
         {safeAccount === '0x0' ? (
         <>
-          <span style={{fontWeight: "bold"}}>You don't heave a safe acount yet!</span>
-          <a href="/settings">Generate Account</a>
+          <span style={{fontWeight: "bold"}}>You haven't setted a safe acount yet!</span>
+          <Button type="link" onClick={() => setIsModalOpen(true)}>Set Account</Button>
+          <Modal
+            title="Set Safe Account"
+            open={isModalOpen}
+            onCancel={() => setIsModalOpen(false)}
+            footer={null}
+          >
+            <Form
+              form={form}
+              onFinish={handleSetAccount}
+              layout="vertical"
+            >
+              <Form.Item
+                name="safeAccount"
+                label="Safe Account Address"
+                rules={[
+                  { required: true, message: '请输入Safe Account地址！' },
+                  { pattern: /^0x[a-fA-F0-9]{40}$/, message: '请输入有效的钱包地址！' }
+                ]}
+              >
+                <Input placeholder="请输入safe钱包地址" />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} block>
+                  确认
+                </Button>
+              </Form.Item>
+            </Form>
+          </Modal>
         </>
       ) : (
         <span style={{fontWeight: "bold"}}>{safeAccount}</span>

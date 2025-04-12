@@ -1,47 +1,32 @@
-import React, { useState } from 'react';
-import { Table, Card, Button, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Card, Button, Space, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { fetchHistoryData } from '../api/data';
 
 const History = () => {
   const navigate = useNavigate();
-  const [data] = useState([
-    {
-      key: '1',
-      paymentTime: '2023-11-01 14:30:00',
-      totalAmount: 242000,
-      employees: [
-        {
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          total: 135000,
-        },
-        {
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          total: 107000,
-        },
-      ],
-      transactionHash: '0x1234...5678',
-    },
-    {
-      key: '2',
-      paymentTime: '2023-10-01 15:00:00',
-      totalAmount: 242000,
-      employees: [
-        {
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          total: 135000,
-        },
-        {
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          total: 107000,
-        },
-      ],
-      transactionHash: '0x9876...4321',
-    },
-  ]);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const getHistoryData = async () => {
+      try {
+        setLoading(true);
+        const result = await fetchHistoryData();
+        setData(result.transactions.map((transaction, index) => ({
+          key: String(index + 1),
+          ...transaction
+        })));
+      } catch (error) {
+        console.error('获取历史数据失败:', error);
+        message.error('获取历史数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getHistoryData();
+  }, []);
 
   const expandedRowRender = (record) => {
     const columns = [
@@ -107,6 +92,7 @@ const History = () => {
         extra={<Button type="primary" onClick={() => navigate('/payroll')}>Back to Payroll</Button>}
       >
         <Table
+          loading={loading}
           columns={columns}
           dataSource={data}
           expandable={{

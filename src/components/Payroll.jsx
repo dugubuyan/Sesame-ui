@@ -1,30 +1,50 @@
-import React, { useState } from 'react';
-import { Table, Card, Space, Select, DatePicker, Button, Form, Input, Popconfirm } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Card, Space, Button, Form, Input, Popconfirm, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-
-const { RangePicker } = DatePicker;
+import { fetchPayrollData, saveEmployeeData } from '../api/data';
 
 const Payroll = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const [data, setData] = useState([
-    {
-      key: '1',
-      name: 'John Doe',
-      address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-      baseSalary: 120000,
-      bonus: 15000,
-      total: 135000,
-    },
-    {
-      key: '2',
-      name: 'Jane Smith',
-      address: '0x97F28b404EEAf6a00660c113FEd550a23054ae46',
-      baseSalary: 95000,
-      bonus: 12000,
-      total: 107000,
-    },
-  ]);
+
+  // 添加获取数据的函数
+  const getPayrollData = async () => {
+    try {
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        console.log('钱包未连接');
+        setData([]);
+        return;
+      }
+      const response = await fetchPayrollData(walletAddress);
+      setData(response.employees || []);
+    } catch (error) {
+      console.error('获取工资数据失败:', error);
+      message.error('获取工资数据失败');
+    }
+  };
+
+  // 在组件挂载时获取数据
+  useEffect(() => {
+    getPayrollData();
+
+    // 监听钱包连接和断开连接事件
+    const handleWalletConnected = () => {
+      getPayrollData();
+    };
+    const handleWalletDisconnected = () => {
+      setData([]);
+    };
+    window.addEventListener('walletConnected', handleWalletConnected);
+    window.addEventListener('walletDisconnected', handleWalletDisconnected);
+
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+      window.removeEventListener('walletDisconnected', handleWalletDisconnected);
+    };
+  }, []);
+
+  const [data, setData] = useState([]);
 
   const [editingKey, setEditingKey] = useState('');
 
@@ -51,16 +71,31 @@ const Payroll = () => {
       const index = newData.findIndex((item) => key === item.key);
       if (index > -1) {
         const item = newData[index];
-        newData.splice(index, 1, {
+        const updatedEmployee = {
           ...item,
           ...row,
           total: Number(row.baseSalary) + Number(row.bonus),
-        });
+        };
+        
+        // 获取钱包地址
+        const walletAddress = localStorage.getItem('connectedWalletAddress');
+        if (!walletAddress) {
+          message.error('钱包未连接');
+          return;
+        }
+
+        // 调用API保存数据
+        await saveEmployeeData(walletAddress, updatedEmployee);
+        
+        // 更新本地状态
+        newData.splice(index, 1, updatedEmployee);
         setData(newData);
         setEditingKey('');
+        message.success('保存成功');
       }
     } catch (errInfo) {
-      console.log('Validate Failed:', errInfo);
+      console.error('保存失败:', errInfo);
+      message.error('保存失败');
     }
   };
 
