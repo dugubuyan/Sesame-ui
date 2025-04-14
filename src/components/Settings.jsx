@@ -1,51 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Avatar, Space, Table, Typography, Tooltip, message } from 'antd';
-import { EditOutlined, PlusOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
-import { fetchMembersData } from '../api/data';
-
-const { Text } = Typography;
+import { Card, Form, Input, Button, Space, message } from 'antd';
+import { updateUserInfo, saveSafeAccount, fetchUserInfo } from '../api/data';
 
 const Settings = () => {
   const [form] = Form.useForm();
-  const [form1] = Form.useForm();
+  const [userName, setUserName] = useState('');
   const [safeAccount, setSafeAccount] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [userName, setUserName] = useState('Alex');
-  const [editingKey, setEditingKey] = useState('');
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isSafeAccountEditing, setIsSafeAccountEditing] = useState(false);
 
   useEffect(() => {
-    const getMembers = async () => {
+    const getUserInfo = async () => {
       try {
-        setLoading(true);
         const walletAddress = localStorage.getItem('connectedWalletAddress');
         if (!walletAddress) {
           console.log('钱包未连接');
-          setMembers([]);
+          setUserName('');
+          setSafeAccount('');
           return;
         }
-        const data = await fetchMembersData(walletAddress);
-        setMembers(data.members.map((member, index) => ({
-          key: String(index + 1),
-          ...member
-        })));
+        const data = await fetchUserInfo(walletAddress);
+        setUserName(data.userName || '');
+        setSafeAccount(data.safeAccount || '');
       } catch (error) {
-        console.error('获取成员数据失败:', error);
-        message.error('获取成员数据失败');
-      } finally {
-        setLoading(false);
+        console.error('获取用户信息失败:', error);
+        message.error('获取用户信息失败');
       }
     };
-
-    getMembers();
+    
+    getUserInfo();
 
     // 监听钱包连接和断开连接事件
     const handleWalletConnected = () => {
-      getMembers();
+      getUserInfo();
     };
     const handleWalletDisconnected = () => {
-      setMembers([]);
+      setUserName('');
+      setSafeAccount('');
     };
     window.addEventListener('walletConnected', handleWalletConnected);
     window.addEventListener('walletDisconnected', handleWalletDisconnected);
@@ -56,38 +47,21 @@ const Settings = () => {
     };
   }, []);
 
-  const isEditable = (record) => record.key === editingKey;
-
-  const edit = (record) => {
-    console.log("record:",record);
-    form1.setFieldsValue({ name: record.name, address: record.address });
-    setEditingKey(record.key);
-  };
-
-  const save = async (key) => {
+  const handleSave = async () => {
     try {
-      const row = await form1.validateFields();
-      const newData = [...members];
-      const index = newData.findIndex((item) => key === item.key);
-      if (index > -1) {
-        const item = newData[index];
-        newData.splice(index, 1, { ...item, ...row });
-        setMembers(newData);
-        setEditingKey('');
+      const newUserName = form.getFieldValue('userName');
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        throw new Error('钱包未连接');
       }
-    } catch (errInfo) {
-      console.log('Validate Failed:', errInfo);
+      await updateUserInfo(walletAddress, { userName: newUserName });
+      setUserName(newUserName);
+      setIsEditing(false);
+      message.success('用户名更新成功');
+    } catch (error) {
+      console.error('更新用户名失败:', error);
+      message.error('更新用户名失败');
     }
-  };
-
-  const cancel = () => {
-    setEditingKey('');
-  };
-
-  const handleSave = () => {
-    const newUserName = form.getFieldValue('userName');
-    setUserName(newUserName);
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
@@ -95,146 +69,40 @@ const Settings = () => {
     setIsEditing(false);
   };
 
-  const handleGenerateAccount = () => {
-    // TODO: Implement account generation logic
-    console.log('Generating account...');
-  };
-
-  const handleAddSigner = () => {
-    const newKey = String(members.length + 1);
-    const newMember = {
-      key: newKey,
-      name: `signer${members.length}`,
-      address: '',
-    };
-    form1.setFieldsValue({ name: `signer${members.length}`, address: '' }); 
-    setMembers([...members, newMember]);
-    setEditingKey(newKey);
-  };
-
-  const [requiredConfirmations, setRequiredConfirmations] = useState(2);
-  const [isEditingConfirmations, setIsEditingConfirmations] = useState(false);
-  const [copyTooltip, setCopyTooltip] = useState('Copy to clipboard');
-
-  const handleConfirmationsChange = (value) => {
-    setRequiredConfirmations(value);
-    setIsEditingConfirmations(false);
-  };
-
-  // 创建一个可编辑单元格组件，用于表格编辑
-  const EditableCell = ({ editing, dataIndex, title, record, children, ...restProps }) => {
-    return (
-      <td {...restProps}>
-        {editing ? (
-          <Form.Item
-            name={dataIndex}
-            style={{ margin: 0 }}
-            rules={[{ required: true, message: `Please input ${title}!` }]}
-          >
-            <Input />
-          </Form.Item>
-        ) : (
-          children
-        )}
-      </td>
-    );
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      editable: true,
-      render: (text, record) => {
-        const editable = isEditable(record);
-        return !editable ? (
-          <Space>
-            <Avatar style={{ backgroundColor: '#f56a00' }}>{text[0].toUpperCase()}</Avatar>
-            {text}
-          </Space>
-        ) : (
-          text
-        );
-      },
-    },
-    {
-      title: 'Address',
-      dataIndex: 'address',
-      key: 'address',
-      editable: true,
-      render: (text, record) => {
-        const editable = isEditable(record);
-        return !editable ? (
-          <Space>
-            {text}
-            <Tooltip title={copyTooltip} mouseEnterDelay={0.1}>
-              <CopyOutlined
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  navigator.clipboard.writeText(text);
-                  message.success('Copied!');
-                  setCopyTooltip('Copied!');
-                  setTimeout(() => setCopyTooltip('Copy to clipboard'), 500);
-                }}
-              />
-            </Tooltip>
-          </Space>
-        ) : (
-          text
-        );
-      },
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => {
-        const editable = isEditable(record);
-        return editable ? (
-          <Space size="middle">
-            <Button type="link" onClick={() => save(record.key)}>Save</Button>
-            <Button type="link" onClick={cancel}>Cancel</Button>
-          </Space>
-        ) : (
-          <Space size="middle">
-            <Button type="link" icon={<EditOutlined />} onClick={() => edit(record)} />
-            <Button type="link" danger icon={<DeleteOutlined />} onClick={() => setMembers(members.filter(member => member.key !== record.key))} />
-          </Space>
-        );
-      },
-    },
-  ];
-  
-  // 处理可编辑列
-  const mergedColumns = columns.map((col) => {
-    if (!col.editable) {
-      return col;
+  const handleSafeAccountSave = async () => {
+    try {
+      const newSafeAccount = form.getFieldValue('safeAccount');
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        throw new Error('钱包未连接');
+      }
+      await saveSafeAccount(walletAddress, newSafeAccount);
+      setSafeAccount(newSafeAccount);
+      setIsSafeAccountEditing(false);
+      message.success('Safe Account设置成功');
+    } catch (error) {
+      console.error('设置Safe Account失败:', error);
+      message.error('设置Safe Account失败');
     }
-    return {
-      ...col,
-      onCell: (record) => ({
-        record,
-        dataIndex: col.dataIndex,
-        title: col.title,
-        editing: isEditable(record),
-      }),
-    };
-  });
+  };
+
+  const handleSafeAccountCancel = () => {
+    form.setFieldsValue({ safeAccount });
+    setIsSafeAccountEditing(false);
+  };
 
   return (
     <div className="settings">
       <Card title="User Settings">
-        <Form labelAlign="left"
+        <Form
+          labelAlign="left"
           form={form}
           layout="horizontal"
           labelCol={{ span: 4 }}
           wrapperCol={{ span: 20 }}
           initialValues={{
             userName,
-            language: 'en',
-            timezone: 'UTC+8',
-            notifications: true,
-            darkMode: false,
+            safeAccount
           }}
         >
           <Form.Item
@@ -250,7 +118,7 @@ const Settings = () => {
             ) : (
               <Space>
                 <span>{userName}</span>
-                <Button type="link" icon={<EditOutlined />} onClick={() => setIsEditing(true)} />
+                <Button type="link" onClick={() => setIsEditing(true)}>Edit</Button>
               </Space>
             )}
           </Form.Item>
@@ -258,67 +126,21 @@ const Settings = () => {
             label="Safe Account"
             name="safeAccount"
           >
-            {safeAccount ? (
-              <Input value={safeAccount} disabled />
+            {isSafeAccountEditing ? (
+              <Space>
+                <Input style={{ width: '200px' }} />
+                <Button type="primary" onClick={handleSafeAccountSave}>保存</Button>
+                <Button onClick={handleSafeAccountCancel}>取消</Button>
+              </Space>
             ) : (
-              <Button type="primary" onClick={handleGenerateAccount}>Generate Account</Button>
+              <Space>
+                <span>{safeAccount || '未设置'}</span>
+                <Button type="link" onClick={() => setIsSafeAccountEditing(true)}>Edit</Button>
+              </Space>
             )}
           </Form.Item>
         </Form>
       </Card>
-      {/* 只有在safeAccount设置后才显示Members和Required confirmations */}
-      {safeAccount && (
-        <Card title="Members" 
-          style={{ marginTop: 24 }}
-        >
-          <Form form={form1} component={false}>
-            <Table
-              components={{
-                body: {
-                  cell: EditableCell,
-                },
-              }}
-              columns={mergedColumns.map(col => ({
-                ...col,
-                render: col.key === 'actions' ? null : col.render
-              }))}
-              dataSource={members}
-              pagination={false}
-              rowClassName="editable-row"
-            />
-          </Form>
-          <div style={{ marginTop: 24 }}>
-            <Text strong>Required confirmations</Text>
-            <div style={{ marginTop: 12 }}>
-              <Space>
-                <Text>Any transaction requires the confirmation of:</Text>
-                <Text>{requiredConfirmations} out of {members.length} signers.</Text>
-              </Space>
-            </div>
-          </div>
-          {/* 以下是编辑相关的代码，暂时注释起来
-          extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAddSigner}>Add signer</Button>}
-          {isEditingConfirmations ? (
-            <Space>
-              <Input
-                type="number"
-                style={{ width: 60 }}
-                defaultValue={requiredConfirmations}
-                onPressEnter={(e) => handleConfirmationsChange(parseInt(e.target.value))}
-              />
-              <Text>out of {members.length} signers.</Text>
-              <Button type="primary" size="small" onClick={() => setIsEditingConfirmations(false)}>确定</Button>
-              <Button size="small" onClick={() => setIsEditingConfirmations(false)}>取消</Button>
-            </Space>
-          ) : (
-            <Space>
-              <Text>{requiredConfirmations} out of {members.length} signers.</Text>
-              <Button type="primary" onClick={() => setIsEditingConfirmations(true)}>Change</Button>
-            </Space>
-          )}
-          */}
-        </Card>
-      )}
     </div>
   );
 };

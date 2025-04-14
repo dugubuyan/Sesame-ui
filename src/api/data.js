@@ -1,10 +1,11 @@
 // 从后端获取数据的API接口
-const BASE_URL = 'http://localhost:3000';
-let authToken = null;
+const BASE_URL = 'http://localhost:30001';
+let authToken = localStorage.getItem('authToken');
 
 // 清除authToken
 export const clearAuthToken = () => {
   authToken = null;
+  localStorage.removeItem('authToken');
 };
 
 // 登录并获取authToken
@@ -20,6 +21,7 @@ export const login = async (walletAddress) => {
     const data = await response.json();
     if (data.success) {
       authToken = data.data.authToken;
+      localStorage.setItem('authToken', authToken);
       return data.data.authToken;
     }
     throw new Error('登录失败');
@@ -31,12 +33,13 @@ export const login = async (walletAddress) => {
 
 // 获取请求头
 const getHeaders = () => {
-  if (!authToken) {
+  const storedAuthToken = localStorage.getItem('authToken');
+  if (!storedAuthToken) {
     throw new Error('未登录，请先连接钱包');
   }
   return {
     'Content-Type': 'application/json',
-    'Auth-Token': authToken
+    'Auth-Token': storedAuthToken
   };
 };
 
@@ -46,7 +49,7 @@ export const fetchDashboardData = async (walletAddress) => {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/dashboard`, {
+    const response = await fetch(`${BASE_URL}/api/dashboard?walletAddress=${walletAddress}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -67,7 +70,7 @@ export const fetchPayrollData = async (walletAddress) => {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/payroll`, {
+    const response = await fetch(`${BASE_URL}/api/payroll?walletAddress=${walletAddress}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -88,7 +91,7 @@ export const fetchHistoryData = async (walletAddress) => {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/history`, {
+    const response = await fetch(`${BASE_URL}/api/history?walletAddress=${walletAddress}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -109,7 +112,7 @@ export const fetchMembersData = async (walletAddress) => {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/members`, {
+    const response = await fetch(`${BASE_URL}/api/members?walletAddress=${walletAddress}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -120,6 +123,31 @@ export const fetchMembersData = async (walletAddress) => {
     throw new Error('获取Members数据失败');
   } catch (error) {
     console.error('获取Members数据失败:', error);
+    throw error;
+  }
+};
+
+// 删除员工数据
+export const deleteEmployeeData = async (walletAddress, employeeId) => {
+  if (!walletAddress) {
+    throw new Error('钱包地址不能为空');
+  }
+  if (!employeeId) {
+    throw new Error('员工ID不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/employee/${employeeId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+      body: JSON.stringify({ walletAddress })
+    });
+    const data = await response.json();
+    if (data.success) {
+      return true;
+    }
+    throw new Error('删除员工数据失败');
+  } catch (error) {
+    console.error('删除员工数据失败:', error);
     throw error;
   }
 };
@@ -136,7 +164,7 @@ export const saveEmployeeData = async (walletAddress, employeeData) => {
     const response = await fetch(`${BASE_URL}/api/employee`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ employeeData })
+      body: JSON.stringify({ walletAddress, employeeData })
     });
     const data = await response.json();
     if (data.success) {
@@ -149,8 +177,51 @@ export const saveEmployeeData = async (walletAddress, employeeData) => {
   }
 };
 
+// 获取用户信息
+export const fetchUserInfo = async (walletAddress) => {
+  if (!walletAddress) {
+    throw new Error('钱包地址不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/user?walletAddress=${walletAddress}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error('获取用户信息失败');
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    throw error;
+  }
+};
+
+// 更新用户信息
+export const updateUserInfo = async (walletAddress, userInfo) => {
+  if (!walletAddress) {
+    throw new Error('钱包地址不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/user`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ walletAddress, ...userInfo })
+    });
+    const data = await response.json();
+    if (data.success) {
+      return true;
+    }
+    throw new Error('更新用户信息失败');
+  } catch (error) {
+    console.error('更新用户信息失败:', error);
+    throw error;
+  }
+};
+
 // 保存Safe Account地址
-export const saveSafeAccount = async (safeAddress) => {
+export const saveSafeAccount = async (walletAddress,safeAddress) => {
   if (!safeAddress) {
     throw new Error('Safe Account地址不能为空');
   }
@@ -158,7 +229,7 @@ export const saveSafeAccount = async (safeAddress) => {
     const response = await fetch(`${BASE_URL}/api/safe-account`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ safeAddress })
+      body: JSON.stringify({ walletAddress, safeAddress })
     });
     const data = await response.json();
     if (data.success) {

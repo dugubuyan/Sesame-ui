@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import { fetchDashboardData, saveSafeAccount } from '../api/data';
+import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
 
 const putSafeAccount = async (safeAddress) => {
   try {
-    await saveSafeAccount(safeAddress);
+    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    if (!walletAddress) {
+      throw new Error('钱包未连接');
+    }
+    await saveSafeAccount(walletAddress, safeAddress);
     return true;
   } catch (error) {
     console.error('设置Safe Account失败:', error);
@@ -46,6 +50,8 @@ const Dashboard = () => {
           setTotalEmployees(0);
           setMonthlyPayroll(0);
           setBalance(0);
+          // 清除认证信息
+          clearAuthToken();
           return;
         }
         const data = await fetchDashboardData(walletAddress);

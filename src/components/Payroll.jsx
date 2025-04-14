@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Card, Space, Button, Form, Input, Popconfirm, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchPayrollData, saveEmployeeData } from '../api/data';
+import { fetchPayrollData, saveEmployeeData,deleteEmployeeData, clearAuthToken } from '../api/data';
 
 const Payroll = () => {
   const navigate = useNavigate();
@@ -14,10 +14,16 @@ const Payroll = () => {
       if (!walletAddress) {
         console.log('钱包未连接');
         setData([]);
+        // 清除认证信息
+        clearAuthToken();
         return;
       }
       const response = await fetchPayrollData(walletAddress);
-      setData(response.employees || []);
+      const employeesWithKeys = (response.employees || []).map(employee => ({
+        ...employee,
+        key: employee.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      }));
+      setData(employeesWithKeys);
     } catch (error) {
       console.error('获取工资数据失败:', error);
       message.error('获取工资数据失败');
@@ -48,9 +54,28 @@ const Payroll = () => {
 
   const [editingKey, setEditingKey] = useState('');
 
-  const handleDelete = (key) => {
-    const newData = data.filter((item) => item.key !== key);
-    setData(newData);
+  const handleDelete = async (key) => {
+    try {
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        message.error('钱包未连接');
+        return;
+      }
+      
+      const employee = data.find(item => item.key === key);
+      if (!employee || !employee.id) {
+        message.error('无效的员工记录');
+        return;
+      }
+
+      await deleteEmployeeData(walletAddress, employee.id);
+      const newData = data.filter((item) => item.key !== key);
+      setData(newData);
+      message.success('删除成功');
+    } catch (error) {
+      console.error('删除失败:', error);
+      message.error('删除失败');
+    }
   };
 
   const isEditing = (record) => record.key === editingKey;
@@ -100,9 +125,8 @@ const Payroll = () => {
   };
 
   const addNewRow = () => {
-    const newKey = String(data.length + 1);
     const newRow = {
-      key: newKey,
+      key: `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: '',
       address: '',
       baseSalary: 0,
@@ -131,21 +155,21 @@ const Payroll = () => {
       dataIndex: 'baseSalary',
       key: 'baseSalary',
       editable: true,
-      render: (value) => `$${value.toLocaleString()}`,
+      render: (value) => `$${(value || 0).toLocaleString()}`,
     },
     {
       title: 'Bonus',
       dataIndex: 'bonus',
       key: 'bonus',
       editable: true,
-      render: (value) => `$${value.toLocaleString()}`,
+      render: (value) => `$${(value || 0).toLocaleString()}`,
     },
     {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
       editable: false,
-      render: (value) => `$${value.toLocaleString()}`,
+      render: (value) => `$${(value || 0).toLocaleString()}`,
     },
     {
       title: 'Actions',

@@ -21,6 +21,9 @@
         "endpoint": "/api/dashboard",
         "headers": {
           "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
         }
       },
       "response": {
@@ -29,7 +32,8 @@
           "totalEmployees": "number",
           "totalPayroll": "number",
           "pendingPayments": "number",
-          "recentTransactions": "array"
+          "recentTransactions": "array",
+          "safeAccount": "string"
         }
       }
     },
@@ -39,12 +43,29 @@
         "endpoint": "/api/payroll",
         "headers": {
           "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
         }
       },
       "response": {
         "success": true,
         "data": {
-          "employees": "array"
+          "employees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": "string",
+                "name": "string",
+                "address": "string",
+                "baseSalary": "number",
+                "bonus": "number",
+                "total": "number",
+                "paymentStatus": "string"
+              }
+            }
+          }
         }
       }
     },
@@ -54,6 +75,9 @@
         "endpoint": "/api/history",
         "headers": {
           "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
         }
       },
       "response": {
@@ -69,6 +93,9 @@
         "endpoint": "/api/members",
         "headers": {
           "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
         }
       },
       "response": {
@@ -86,11 +113,24 @@
           "Auth-Token": "string"
         },
         "body": {
-          "employeeData": "object"
+          "walletAddress": "string",
+          "employeeData": {
+            "type": "object",
+            "properties": {
+              "name": "string",
+              "walletAddress": "string",
+              "baseSalary": "number",
+              "bonus": "number"
+            },
+            "required": ["name", "walletAddress", "baseSalary"]
+          }
         }
       },
       "response": {
-        "success": true
+        "success": true,
+        "data": {
+          "id": "string"
+        }
       }
     },
     "saveSafeAccount": {
@@ -101,7 +141,58 @@
           "Auth-Token": "string"
         },
         "body": {
+          "walletAddress": "string",
           "safeAddress": "string"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "deleteEmployee": {
+      "request": {
+        "method": "DELETE",
+        "endpoint": "/api/employee/{id}",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "getUserInfo": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/user",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "userName": "string",
+          "safeAccount": "string"
+        }
+      }
+    },
+    "updateUserInfo": {
+      "request": {
+        "method": "PUT",
+        "endpoint": "/api/user",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string",
+          "userName": "string"
         }
       },
       "response": {

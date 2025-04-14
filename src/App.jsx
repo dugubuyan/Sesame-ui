@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout, Menu, Avatar, Badge, Dropdown, Button, Select, Space, Divider } from 'antd';
 import { login, clearAuthToken } from './api/data';
 import { BellOutlined, LinkOutlined, UserOutlined, DashboardOutlined, PayCircleOutlined, SettingOutlined } from '@ant-design/icons';
@@ -27,6 +27,13 @@ function App() {
   const [userAddress, setUserAddress] = useState('');
   const { connect, isConnecting } = useConnectModal();
   const [selectedChain, setSelectedChain] = useState('');
+
+  useEffect(() => {
+    if (!isConnected) {
+      localStorage.removeItem('connectedWalletAddress');
+      clearAuthToken();
+    }
+  }, []);
 
   async function handleConnect() {
     try {
