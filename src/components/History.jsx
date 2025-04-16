@@ -11,15 +11,24 @@ const History = () => {
   useEffect(() => {
     const getHistoryData = async () => {
       try {
+        const walletAddress = localStorage.getItem('connectedWalletAddress');
+        if (!walletAddress) {
+          console.log('钱包未连接');
+          setData([]);
+          // 清除认证信息
+          clearAuthToken();
+          message.error('Wallet not connected');
+          return;
+        }
         setLoading(true);
-        const result = await fetchHistoryData();
+        const result = await fetchHistoryData(walletAddress);
         setData(result.transactions.map((transaction, index) => ({
           key: String(index + 1),
           ...transaction
         })));
       } catch (error) {
         console.error('获取历史数据失败:', error);
-        message.error('获取历史数据失败');
+        message.error(error.message || 'no data fetched');
       } finally {
         setLoading(false);
       }

@@ -14,7 +14,7 @@ const Settings = () => {
       try {
         const walletAddress = localStorage.getItem('connectedWalletAddress');
         if (!walletAddress) {
-          console.log('钱包未连接');
+          console.log('Wallet not connected');
           setUserName('');
           setSafeAccount('');
           return;
@@ -23,8 +23,8 @@ const Settings = () => {
         setUserName(data.userName || '');
         setSafeAccount(data.safeAccount || '');
       } catch (error) {
-        console.error('获取用户信息失败:', error);
-        message.error('获取用户信息失败');
+        console.error('Failed to fetch user info:', error);
+        message.error(error.message||'Failed to fetch user info');
       }
     };
     
@@ -52,15 +52,15 @@ const Settings = () => {
       const newUserName = form.getFieldValue('userName');
       const walletAddress = localStorage.getItem('connectedWalletAddress');
       if (!walletAddress) {
-        throw new Error('钱包未连接');
+        throw new Error('Wallet not connected');
       }
       await updateUserInfo(walletAddress, { userName: newUserName });
       setUserName(newUserName);
       setIsEditing(false);
-      message.success('用户名更新成功');
+      message.success('Username updated successfully');
     } catch (error) {
-      console.error('更新用户名失败:', error);
-      message.error('更新用户名失败');
+      console.error('Failed to update username:', error);
+      message.error(error.message || 'Failed to update username');
     }
   };
 
@@ -74,15 +74,15 @@ const Settings = () => {
       const newSafeAccount = form.getFieldValue('safeAccount');
       const walletAddress = localStorage.getItem('connectedWalletAddress');
       if (!walletAddress) {
-        throw new Error('钱包未连接');
+        throw new Error('Wallet not connected');
       }
       await saveSafeAccount(walletAddress, newSafeAccount);
       setSafeAccount(newSafeAccount);
       setIsSafeAccountEditing(false);
-      message.success('Safe Account设置成功');
+      message.success('Safe Account set successfully');
     } catch (error) {
-      console.error('设置Safe Account失败:', error);
-      message.error('设置Safe Account失败');
+      console.error('Failed to set Safe Account:', error);
+      message.error('Failed to set Safe Account');
     }
   };
 
@@ -112,8 +112,8 @@ const Settings = () => {
             {isEditing ? (
               <Space>
                 <Input style={{ width: '200px' }} />
-                <Button type="primary" onClick={handleSave}>保存</Button>
-                <Button onClick={handleCancel}>取消</Button>
+                <Button type="primary" onClick={handleSave}>Save</Button>
+                <Button onClick={handleCancel}>Cancel</Button>
               </Space>
             ) : (
               <Space>
@@ -129,12 +129,12 @@ const Settings = () => {
             {isSafeAccountEditing ? (
               <Space>
                 <Input style={{ width: '200px' }} />
-                <Button type="primary" onClick={handleSafeAccountSave}>保存</Button>
-                <Button onClick={handleSafeAccountCancel}>取消</Button>
+                <Button type="primary" onClick={handleSafeAccountSave}>Save</Button>
+                <Button onClick={handleSafeAccountCancel}>Cancel</Button>
               </Space>
             ) : (
               <Space>
-                <span>{safeAccount || '未设置'}</span>
+                <span>{safeAccount || 'Not set'}</span>
                 <Button type="link" onClick={() => setIsSafeAccountEditing(true)}>Edit</Button>
               </Space>
             )}

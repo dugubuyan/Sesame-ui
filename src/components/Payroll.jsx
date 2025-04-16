@@ -25,8 +25,8 @@ const Payroll = () => {
       }));
       setData(employeesWithKeys);
     } catch (error) {
-      console.error('获取工资数据失败:', error);
-      message.error('获取工资数据失败');
+      console.error('Failed to fetch payroll data:', error);
+      message.error('Failed to fetch payroll data');
     }
   };
 
@@ -58,23 +58,23 @@ const Payroll = () => {
     try {
       const walletAddress = localStorage.getItem('connectedWalletAddress');
       if (!walletAddress) {
-        message.error('钱包未连接');
+        message.error('Wallet not connected');
         return;
       }
       
       const employee = data.find(item => item.key === key);
       if (!employee || !employee.id) {
-        message.error('无效的员工记录');
+        message.error('Invalid employee record');
         return;
       }
 
       await deleteEmployeeData(walletAddress, employee.id);
       const newData = data.filter((item) => item.key !== key);
       setData(newData);
-      message.success('删除成功');
+      message.success('Deleted successfully');
     } catch (error) {
-      console.error('删除失败:', error);
-      message.error('删除失败');
+      console.error('Delete failed:', error);
+      message.error('Delete failed');
     }
   };
 
@@ -105,7 +105,7 @@ const Payroll = () => {
         // 获取钱包地址
         const walletAddress = localStorage.getItem('connectedWalletAddress');
         if (!walletAddress) {
-          message.error('钱包未连接');
+          message.error('Wallet not connected');
           return;
         }
 
@@ -116,11 +116,11 @@ const Payroll = () => {
         newData.splice(index, 1, updatedEmployee);
         setData(newData);
         setEditingKey('');
-        message.success('保存成功');
+        message.success('Saved successfully');
       }
     } catch (errInfo) {
-      console.error('保存失败:', errInfo);
-      message.error('保存失败');
+      console.error('Save failed:', errInfo);
+      message.error('Save failed');
     }
   };
 
@@ -185,10 +185,10 @@ const Payroll = () => {
           <Space>
             <Button type="link" disabled={editingKey !== ''} onClick={() => edit(record)}>Edit</Button>
             <Popconfirm
-              title="确定要删除这条记录吗？"
+              title="Are you sure you want to delete this record?"
               onConfirm={() => handleDelete(record.key)}
-              okText="确定"
-              cancelText="取消"
+              okText="Confirm"
+              cancelText="Cancel"
             >
               <Button type="link" danger disabled={editingKey !== ''}>Delete</Button>
             </Popconfirm>

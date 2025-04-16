@@ -7,12 +7,12 @@ const putSafeAccount = async (safeAddress) => {
   try {
     const walletAddress = localStorage.getItem('connectedWalletAddress');
     if (!walletAddress) {
-      throw new Error('钱包未连接');
+      throw new Error('Wallet not connected');
     }
     await saveSafeAccount(walletAddress, safeAddress);
     return true;
   } catch (error) {
-    console.error('设置Safe Account失败:', error);
+    console.error('Failed to set Safe Account:', error);
     throw error;
   }
 };
@@ -32,9 +32,9 @@ const Dashboard = () => {
       await putSafeAccount(values.safeAccount);
       setSafeAccount(values.safeAccount);
       setIsModalOpen(false);
-      message.success('Safe Account设置成功');
+      message.success('Safe Account set successfully');
     } catch (error) {
-      message.error('设置Safe Account失败');
+      message.error(error.message || 'Failed to set Safe Account');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ const Dashboard = () => {
         // 从localStorage获取钱包地址
         const walletAddress = localStorage.getItem('connectedWalletAddress');
         if (!walletAddress) {
-          console.log('钱包未连接');
+          console.log('Wallet not connected');
           setTotalEmployees(0);
           setMonthlyPayroll(0);
           setBalance(0);
@@ -60,8 +60,8 @@ const Dashboard = () => {
         setBalance(data.pendingPayments);
         setSafeAccount(data.safeAccount || '0x0');
       } catch (error) {
-        console.error('获取仪表盘数据失败:', error);
-        message.error('获取仪表盘数据失败');
+        console.error('Failed to fetch dashboard data:', error);
+        message.error('Failed to fetch dashboard data');
       }
     };
     
@@ -135,15 +135,15 @@ const Dashboard = () => {
                 name="safeAccount"
                 label="Safe Account Address"
                 rules={[
-                  { required: true, message: '请输入Safe Account地址！' },
-                  { pattern: /^0x[a-fA-F0-9]{40}$/, message: '请输入有效的钱包地址！' }
+                  { required: true, message: 'Please enter Safe Account address!' },
+                  { pattern: /^0x[a-fA-F0-9]{40}$/, message: 'Please enter a valid wallet address!' }
                 ]}
               >
-                <Input placeholder="请输入safe钱包地址" />
+                <Input placeholder="Enter safe wallet address" />
               </Form.Item>
               <Form.Item>
                 <Button type="primary" htmlType="submit" loading={loading} block>
-                  确认
+                  Confirm
                 </Button>
               </Form.Item>
             </Form>

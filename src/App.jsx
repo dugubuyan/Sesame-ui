@@ -8,6 +8,7 @@ import { BinanceCoin, Ethereum } from '@thirdweb-dev/chain-icons';
 import './App.css';
 import { createThirdwebClient } from "thirdweb";
 import { useConnectModal } from "thirdweb/react";
+import '@ant-design/v5-patch-for-react-19';
 
 const client = createThirdwebClient({
   clientId: "fa21b2ba088ed4d4d7c11fb43a8cd60d",
