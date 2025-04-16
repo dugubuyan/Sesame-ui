@@ -110,10 +110,17 @@ const Payroll = () => {
         }
 
         // 调用API保存数据
-        await saveEmployeeData(walletAddress, updatedEmployee);
+        const response = await saveEmployeeData(walletAddress, updatedEmployee);
+        
+        // 获取保存后的数据（包含新的id）
+        const savedEmployee = {
+          ...updatedEmployee,
+          id: response.id || item.id, // 使用返回的id或保持原有id
+          key: response.id || item.id || item.key // 优先使用id作为key
+        };
         
         // 更新本地状态
-        newData.splice(index, 1, updatedEmployee);
+        newData.splice(index, 1, savedEmployee);
         setData(newData);
         setEditingKey('');
         message.success('Saved successfully');
@@ -132,6 +139,7 @@ const Payroll = () => {
       baseSalary: 0,
       bonus: 0,
       total: 0,
+      // 新增记录不需要id字段，id将由后端生成
     };
     setData([newRow, ...data]);
     edit(newRow);
