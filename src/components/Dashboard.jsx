@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message,Result } from 'antd';
 import { ArrowUpOutlined, ExclamationOutlined } from '@ant-design/icons';
 import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
-import { getPendingTransactions, commitTrans } from '../api/trans.js';
+import { getPendingTransactions, commitTrans,getBalance } from '../api/trans.js';
 
 const putSafeAccount = async (safeAddress) => {
   try {
@@ -60,9 +60,9 @@ const Dashboard = () => {
         const data = await fetchDashboardData(walletAddress);
         setTotalEmployees(data.totalEmployees);
         setMonthlyPayroll(data.totalPayroll);
-        setBalance(data.pendingPayments);
         setSafeAccount(data.safeAccount || '0x0');
         getPendingTransactions(data.safeAccount)
+        getBalance(data.safeAccount)
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         message.error('Failed to fetch dashboard data');
@@ -205,7 +205,7 @@ const Dashboard = () => {
         </Col>):<Col span={12}>
           <Card title="Add funds to get started">
           Add funds directly to your bank account and then you can pay.
-          <Button type="link" htmlType="submit">deposit</Button>
+          <Button type="link" htmlType="submit">Add Fund</Button>
           </Card>
         </Col>}
       </Row>

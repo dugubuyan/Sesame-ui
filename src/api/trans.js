@@ -1,10 +1,10 @@
-import {abi} from './abi.js'
+import {abi,usdt_abi} from './abi.js'
 import { createWalletClient, custom, publicActions } from 'viem';
 import { sepolia } from 'viem/chains'
 import SafeApiKit from '@safe-global/api-kit'
 import Safe from '@safe-global/protocol-kit'
 import { ethers } from 'ethers'
-import { PAYMENT_CONTRACT_ADDRESS } from './constant.js'
+import { PAYMENT_CONTRACT_ADDRESS,RPC_URLS,USDT_CONTRACT_ADDRESS } from './constant.js'
 
 export async function makeTrans(toAddresses, toAmounts, safeAddress) {
     const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -74,6 +74,14 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
         throw error
       }
       // first owner sign transaction end
+}
+
+export async function getBalance(safeAddress) {
+    const provider = new ethers.JsonRpcProvider(RPC_URLS['sepolia'])
+    const contract = new ethers.Contract(USDT_CONTRACT_ADDRESS, usdt_abi, provider);
+    const balance = await contract.balanceOf(safeAddress);
+    console.log(`Balance of ${safeAddress}: ${ethers.formatUnits(balance, 6)} USDT`);
+    return balance
 }
 
 export async function getPendingTransactions(safeAddress) {
