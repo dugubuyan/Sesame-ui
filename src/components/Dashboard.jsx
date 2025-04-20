@@ -43,17 +43,35 @@ const Dashboard = () => {
     }
   };
 
+  const fetchPendingTxDetails = async (safeAccount) => {
+    try {
+      const pendingTx = await getPendingTransactions(safeAccount);
+      if (pendingTx && pendingTx.length > 0) {
+        const txDetails = pendingTx[0];
+        setPendingTxDetails({
+          safeTxHash: txDetails.safeTxHash,
+          confirmationsRequired: txDetails.confirmationsRequired,
+          confirmationsCount: txDetails.confirmations.length
+        });
+      } else {
+        setPendingTxDetails(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending transactions:', error);
+      message.error('Failed to fetch pending transaction details');
+      setPendingTxDetails(null);
+    }
+  };
+
   useEffect(() => {
     const getDashboardData = async () => {
       try {
-        // 从localStorage获取钱包地址
         const walletAddress = localStorage.getItem('connectedWalletAddress');
         if (!walletAddress) {
           console.log('Wallet not connected');
           setTotalEmployees(0);
           setMonthlyPayroll(0);
           setBalance(0);
-          // 清除认证信息
           clearAuthToken();
           return;
         }
@@ -61,8 +79,8 @@ const Dashboard = () => {
         setTotalEmployees(data.totalEmployees);
         setMonthlyPayroll(data.totalPayroll);
         setSafeAccount(data.safeAccount || '0x0');
-        getPendingTransactions(data.safeAccount)
-        getBalance(data.safeAccount)
+        fetchPendingTxDetails(data.safeAccount);
+        getBalance(data.safeAccount);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         message.error('Failed to fetch dashboard data');
@@ -88,23 +106,10 @@ const Dashboard = () => {
   }, []); // 保持空依赖数组，但通过事件监听器响应钱包连接状态
   
   const handleCommitClick = async (safeAccount) => {
-    try {
-      const pendingTx = await getPendingTransactions(safeAccount);
-      if (pendingTx && pendingTx.length > 0) {
-        const txDetails = pendingTx[0];
-        setPendingTxDetails({
-          safeTxHash: txDetails.safeTxHash,
-          confirmationsRequired: txDetails.confirmationsRequired,
-          confirmationsCount: txDetails.confirmations.length
-        });
-        setPendingTxModal(true);
-        console.log("pendingTx:", pendingTx)
-      } else {
-        message.info('No pending transactions found');
-      }
-    } catch (error) {
-      console.error('Failed to fetch pending transactions:', error);
-      message.error('Failed to fetch pending transaction details');
+    if (pendingTxDetails) {
+      setPendingTxModal(true);
+    } else {
+      message.info('No pending transactions found');
     }
   };
   
@@ -215,7 +220,7 @@ const Dashboard = () => {
         <h2>Pending payments</h2>
         </Col>
         <Col span={18} style={{ display: 'flex', alignItems: 'center' }}>
-            {safeAccount !== '0x0' && (
+            {pendingTxDetails && (
               <>
                 You have pending payments to commit.<ExclamationOutlined />
                 <Button type="link" onClick={() => handleCommitClick(safeAccount)}>commit</Button>
