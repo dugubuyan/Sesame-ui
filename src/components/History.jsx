@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Card, Button, Space, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchHistoryData } from '../api/data';
+import { fetchHistoryData,clearAuthToken } from '../api/data';
 
 const History = () => {
   const navigate = useNavigate();

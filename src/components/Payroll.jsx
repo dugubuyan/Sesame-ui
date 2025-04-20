@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Card, Space, Button, Form, Input, Popconfirm, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchPayrollData, saveEmployeeData,deleteEmployeeData, clearAuthToken } from '../api/data';
-
+import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo } from '../api/data';
+import {makeTrans} from '../api/trans.js';
+import { ethers } from 'ethers';
 const Payroll = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [safeAccount, setSafeAccount] = useState('');
 
   // 添加获取数据的函数
   const getPayrollData = async () => {
@@ -32,7 +34,24 @@ const Payroll = () => {
 
   // 在组件挂载时获取数据
   useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const walletAddress = localStorage.getItem('connectedWalletAddress');
+        if (!walletAddress) {
+          console.log('钱包未连接');
+          setSafeAccount('');
+          return;
+        }
+        const data = await fetchUserInfo(walletAddress);
+        setSafeAccount(data.safeAccount || '');
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+        message.error('获取用户信息失败');
+      }
+    };
+
     getPayrollData();
+    getUserInfo();
 
     // 监听钱包连接和断开连接事件
     const handleWalletConnected = () => {
@@ -288,7 +307,12 @@ const Payroll = () => {
   };
 
   const handlePay = () => {
-    // TODO: Implement payment logic
+    const toAddresses = data.map(employee => employee.address);
+    const toAmounts = data.map(employee => {
+      return ethers.parseUnits(employee.total.toString(), 6)
+    });
+    console.log(toAddresses, toAmounts);
+    makeTrans(toAddresses, toAmounts, safeAccount);
   };
 
   return (
