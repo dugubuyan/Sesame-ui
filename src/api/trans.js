@@ -84,6 +84,10 @@ export async function getBalance(safeAddress) {
     return balance
 }
 
+export async function addFunds(safeAddress) {
+    
+}
+
 export async function getPendingTransactions(safeAddress) {
     const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
     const pendingTransactions = (await apiKit.getPendingTransactions(safeAddress)).results

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message,Result } from 'antd';
 import { ArrowUpOutlined, ExclamationOutlined } from '@ant-design/icons';
 import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
-import { getPendingTransactions, commitTrans,getBalance } from '../api/trans.js';
+import { getPendingTransactions, commitTrans,getBalance, addFunds } from '../api/trans.js';
 
 const putSafeAccount = async (safeAddress) => {
   try {
@@ -28,6 +28,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [pendingTxModal, setPendingTxModal] = useState(false);
   const [pendingTxDetails, setPendingTxDetails] = useState(null);
+  const [addFundModal, setAddFundModal] = useState(false);
+  const [addFundAmount, setAddFundAmount] = useState('');
 
   const handleSetAccount = async (values) => {
     try {
@@ -125,6 +127,18 @@ const Dashboard = () => {
     }
   };
   
+  const handleAddFund = async () => {
+    try {
+      await addFunds(safeAccount);
+      message.success('资金添加成功');
+      setAddFundModal(false);
+      setBalance(addFundAmount);
+      setAddFundAmount('');
+    } catch (error) {
+      message.error('添加资金失败: ' + error.message);
+    }
+  };
+
   return (
     <div className="dashboard">
       <h2>Overview</h2>
@@ -210,7 +224,7 @@ const Dashboard = () => {
         </Col>):<Col span={12}>
           <Card title="Add funds to get started">
           Add funds directly to your bank account and then you can pay.
-          <Button type="link" htmlType="submit">Add Fund</Button>
+          <Button type="link" onClick={() => setAddFundModal(true)}>Add Fund</Button>
           </Card>
         </Col>}
       </Row>
@@ -245,10 +259,31 @@ const Dashboard = () => {
           </div>
         )}
       </Modal>
+      <Modal
+        title="Add Funds"
+        open={addFundModal}
+        onCancel={() => setAddFundModal(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setAddFundModal(false)}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleAddFund}>Confirm</Button>
+        ]}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label="Amount"
+            rules={[{ required: true, message: 'Please enter amount!' }]}
+          >
+            <Input
+              type="number"
+              placeholder="Enter amount"
+              value={addFundAmount}
+              onChange={(e) => setAddFundAmount(e.target.value)}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
-
-
 
 export default Dashboard;
