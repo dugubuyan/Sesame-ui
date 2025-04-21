@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Layout, Menu, Avatar, Badge, Dropdown, Button, Select, Space, Divider } from 'antd';
 import { login, clearAuthToken } from './api/data';
-import { BellOutlined, LinkOutlined, UserOutlined, DashboardOutlined, PayCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { BellOutlined, LinkOutlined, TransactionOutlined, DashboardOutlined, BankOutlined, SettingOutlined } from '@ant-design/icons';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import sesameLogo from './assets/sesame-logo.svg';
 import { BinanceCoin, Ethereum } from '@thirdweb-dev/chain-icons';
@@ -19,6 +19,7 @@ import Dashboard from './components/Dashboard';
 import Payroll from './components/Payroll';
 import Settings from './components/Settings';
 import History from './components/History';
+import Transactions from './components/Transactions';
 
 const { Header, Content, Sider } = Layout;
 
@@ -109,10 +110,14 @@ function App() {
     },
     {
       key: 'payroll',
-      icon: <PayCircleOutlined />,
+      icon: <BankOutlined />,
       label: <Link to="/payroll">Payroll</Link>,
     },
-
+    {
+      key: 'transactions',
+      icon: <TransactionOutlined />,
+      label: <Link to="/transactions">Transactions</Link>,
+    },
     {
       key: 'settings',
       icon: <SettingOutlined />,
@@ -226,6 +231,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/payroll" element={<Payroll />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/transactions" element={<Transactions />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Routes>

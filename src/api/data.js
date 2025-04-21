@@ -220,6 +220,77 @@ export const updateUserInfo = async (walletAddress, userInfo) => {
   }
 };
 
+// 保存待处理交易
+export const savePendingTransaction = async (transactionData) => {
+    if (!transactionData) {
+      throw new Error('交易数据不能为空');
+    }
+    try {
+      const response = await fetch(`${BASE_URL}/api/pending-transaction`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(transactionData)
+      });
+      const data = await response.json();
+      if (data.success) {
+        return true;
+      }
+      throw new Error('保存待处理交易失败');
+    } catch (error) {
+      console.error('保存待处理交易失败:', error);
+      throw error;
+    }
+  };
+// 获取待处理交易
+export const fetchPendingTransactions = async (walletAddress, safeAccount) => {
+  if (!walletAddress || !safeAccount) {
+    throw new Error('钱包地址和安全账户不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}&safeAccount=${safeAccount}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    const data = await response.json();
+    if (data.success) {
+      return {
+        ...data.data,
+        transactions: data.data.transactions.map(tx => ({
+          ...tx,
+          propose_address: tx.propose_address || '',
+          total: tx.total || 0
+        }))
+      };
+    }
+    throw new Error('获取待处理交易失败');
+  } catch (error) {
+    console.error('获取待处理交易失败:', error);
+    throw error;
+  }
+};
+
+// 更新待处理交易状态
+export const updatePendingTransaction = async (walletAddress, transactionId, status) => {
+  if (!walletAddress || !transactionId) {
+    throw new Error('钱包地址和交易ID不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/pending-transactions/${transactionId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ walletAddress, status })
+    });
+    const data = await response.json();
+    if (data.success) {
+      return true;
+    }
+    throw new Error('更新待处理交易状态失败');
+  } catch (error) {
+    console.error('更新待处理交易状态失败:', error);
+    throw error;
+  }
+};
+
 // 保存Safe Account地址
 export const saveSafeAccount = async (walletAddress,safeAddress) => {
   if (!safeAddress) {

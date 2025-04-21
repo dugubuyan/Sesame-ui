@@ -84,8 +84,9 @@ export async function getBalance(safeAddress) {
     return balance
 }
 
-export async function addFunds(safeAddress) {
-    
+export async function addFunds(ammount) {
+    const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    console.log('account:',account)
 }
 
 export async function getPendingTransactions(safeAddress) {

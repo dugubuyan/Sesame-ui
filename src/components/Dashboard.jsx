@@ -229,7 +229,7 @@ const Dashboard = () => {
         </Col>}
       </Row>
       <Divider />
-      <Row gutter={16}>
+      {/* <Row gutter={16}>
       <Col span={6} style={{ display: 'flex', alignItems: 'center' }}>
         <h2>Pending payments</h2>
         </Col>
@@ -241,8 +241,8 @@ const Dashboard = () => {
               </>
             )}
         </Col>
-      </Row>
-      <Modal
+      </Row> */}
+      {/* <Modal
         title="Pending Transaction Details"
         open={pendingTxModal}
         onCancel={() => setPendingTxModal(false)}
@@ -258,7 +258,7 @@ const Dashboard = () => {
             <p>Current Confirmations: {pendingTxDetails.confirmationsCount}</p>
           </div>
         )}
-      </Modal>
+      </Modal> */}
       <Modal
         title="Add Funds"
         open={addFundModal}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Card, Space, Button, Form, Input, Popconfirm, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo } from '../api/data';
+import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo, savePendingTransaction } from '../api/data';
 import {makeTrans} from '../api/trans.js';
 import { ethers } from 'ethers';
 const Payroll = () => {
@@ -306,13 +306,46 @@ const Payroll = () => {
     }
   };
 
-  const handlePay = () => {
-    const toAddresses = data.map(employee => employee.address);
-    const toAmounts = data.map(employee => {
-      return ethers.parseUnits(employee.total.toString(), 6)
-    });
-    console.log(toAddresses, toAmounts);
-    makeTrans(toAddresses, toAmounts, safeAccount);
+  const handlePay = async () => {
+    try {
+      const toAddresses = data.map(employee => employee.address);
+      const toAmounts = data.map(employee => {
+        return ethers.parseUnits(employee.total.toString(), 6)
+      });
+      console.log(toAddresses, toAmounts);
+      await makeTrans(toAddresses, toAmounts, safeAccount);
+      
+      // 获取当前用户地址
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        throw new Error('钱包未连接');
+      }
+
+      // 准备交易详情
+      const transactionDetails = data.map(employee => ({
+        name: employee.name,
+        base: employee.baseSalary,
+        bonus: employee.bonus,
+        total: employee.total
+      }));
+
+      // 计算总金额
+      const totalAmount = transactionDetails.reduce((sum, detail) => sum + detail.total, 0);
+
+      // 保存待处理交易
+      await savePendingTransaction({
+        safe_account: safeAccount,
+        address: walletAddress,
+        propose_address: walletAddress,
+        total: totalAmount,
+        transaction_details: transactionDetails,
+      });
+
+      message.success('交易已发起并保存');
+    } catch (error) {
+      console.error('发起交易失败:', error);
+      message.error('发起交易失败');
+    }
   };
 
   return (
