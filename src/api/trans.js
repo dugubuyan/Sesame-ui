@@ -73,20 +73,54 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
         }
         throw error
       }
+      return safeTxHash
       // first owner sign transaction end
 }
 
 export async function getBalance(safeAddress) {
     const provider = new ethers.JsonRpcProvider(RPC_URLS['sepolia'])
-    const contract = new ethers.Contract(USDT_CONTRACT_ADDRESS, usdt_abi, provider);
-    const balance = await contract.balanceOf(safeAddress);
-    console.log(`Balance of ${safeAddress}: ${ethers.formatUnits(balance, 6)} USDT`);
+    const contract = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, usdt_abi, provider);
+    const bn = await contract.balanceOf(safeAddress);
+    const balance = ethers.formatUnits(bn,6)
+    console.log(`Balance of ${safeAddress}: ${balance} USDT`);
     return balance
 }
 
-export async function addFunds(ammount) {
+export async function addFunds(client, wallet, safeAddress, ammount) {
     const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
     console.log('account:',account)
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    const signer = await provider.getSigner()
+    console.log('client:',client)
+    // console.log('address:',wallet.getAccount().address)
+    // const signer = ethers6Adapter.signer.toEthers({
+    //     client,
+    //     chain: sepolia,
+    //     account:wallet.getAccount(),
+    //   });
+    // const eip1193Provider = EIP1193.toProvider({
+    //     wallet,
+    //     chain: sepolia,
+    //     client,
+    //   });
+    //   const provider = new ethers.BrowserProvider(eip1193Provider);
+    
+    console.log('signer:',signer)
+    console.log('ammount:',ammount)
+    const amt = ethers.parseUnits(ammount, 6)
+    console.log('amt:',amt)
+    const contract = new ethers.Contract(USDT_CONTRACT_ADDRESS, usdt_abi, signer);
+    console.log("contract:",contract)
+    const transaction = await contract.approve(PAYMENT_CONTRACT_ADDRESS, amt)
+    console.log("transaction:",transaction)
+    // Cannot read properties of null (reading 'getTransactionReceipt')
+    const receipt = await transaction.wait()
+    console.log("receipt:",receipt)
+    const payContract = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, abi, signer);
+    const tx = await payContract.deposit(safeAddress, amt)
+    const receipt2 = await tx.wait()
+    console.log("receipt2:", receipt2)
+    return receipt2
 }
 
 export async function getPendingTransactions(safeAddress) {
@@ -96,7 +130,8 @@ export async function getPendingTransactions(safeAddress) {
     return pendingTransactions
 }
 
-export async function commitTrans(safeTxHash, safeAddress) {    console.log('safeTxHash:',safeTxHash)
+export async function commitTrans(safeTxHash, safeAddress) {    
+    console.log('safeTxHash:',safeTxHash)
     try {
         const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
         console.log('account:',account)

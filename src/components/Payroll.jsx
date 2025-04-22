@@ -313,14 +313,13 @@ const Payroll = () => {
         return ethers.parseUnits(employee.total.toString(), 6)
       });
       console.log(toAddresses, toAmounts);
-      await makeTrans(toAddresses, toAmounts, safeAccount);
       
       // 获取当前用户地址
       const walletAddress = localStorage.getItem('connectedWalletAddress');
       if (!walletAddress) {
         throw new Error('钱包未连接');
       }
-
+      // await makeTrans(toAddresses, toAmounts, safeAccount);
       // 准备交易详情
       const transactionDetails = data.map(employee => ({
         name: employee.name,
@@ -330,15 +329,14 @@ const Payroll = () => {
       }));
 
       // 计算总金额
-      const totalAmount = transactionDetails.reduce((sum, detail) => sum + detail.total, 0);
+      const totalAmount = transactionDetails.reduce((sum, detail) => Number(sum) + Number(detail.total), 0);
 
       // 保存待处理交易
       await savePendingTransaction({
-        safe_account: safeAccount,
-        address: walletAddress,
-        propose_address: walletAddress,
+        walletAddress,
+        safeAccount,
         total: totalAmount,
-        transaction_details: transactionDetails,
+        transactionDetails,
       });
 
       message.success('交易已发起并保存');

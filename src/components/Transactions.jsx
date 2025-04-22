@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Space, message, Modal, Button } from 'antd';
-import { fetchPendingTransactions, updatePendingTransaction } from '../api/data';
+import { fetchPendingTransactions, updatePendingTransaction } from '../api/data.js';
+import { getPendingTransactions,commitTrans } from '../api/trans.js'
 
-const Transactions = ({ walletAddress, safeAccount }) => {
+const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-
+  const [selectedTransaction, setSelectedTransaction] = useState([]);
+  // TODO: Implement fetchPendingTransactions and updatePendingTransaction functions from your API file
+  // TODO: Implement fetchUserInfo function from your API file
+  // TODO: Implement updateUserInfo function from your API file
   const loadTransactions = async () => {
-    if (!walletAddress || !safeAccount) return;
+    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    if (!walletAddress) {
+      console.log('Wallet not connected');
+      return;
+    }
     setLoading(true);
     try {
-      const data = await fetchPendingTransactions(walletAddress, safeAccount);
+      const data = await fetchPendingTransactions(walletAddress);
       setTransactions(data.transactions || []);
     } catch (error) {
       message.error('Failed to load pending transactions');
@@ -24,7 +31,7 @@ const Transactions = ({ walletAddress, safeAccount }) => {
 
   useEffect(() => {
     loadTransactions();
-  }, [walletAddress, safeAccount]);
+  }, []);
 
   const getStatusTag = (status) => {
     const statusMap = {
@@ -38,10 +45,29 @@ const Transactions = ({ walletAddress, safeAccount }) => {
 
   const handleCommit = async (record) => {
     // TODO: Implement commit function
+    console.log("record:",record)
+    // try {
+    //     const trans = await getPendingTransactions(record.safe_account)
+    //     console.log("pengding transaction:",trans)
+    //     await commitTrans(trans[0].safeTxHash,record.safe_account)
+    // }catch(error){
+    //     message.error('Failed to commit transaction');
+    //     console.error(error);
+    // }
+    // Update the transaction status to "Completed"
+    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    if (!walletAddress) {
+      console.log('Wallet not connected');
+      return;
+    }
+    await updatePendingTransaction(walletAddress, record.id, "completed")
+    
   };
 
   const showTransactionDetails = (record) => {
+    console.log("record:",record)
     setSelectedTransaction(record);
+    console.log("details:",record.transaction_details)
     setModalVisible(true);
   };
 
@@ -68,10 +94,7 @@ const Transactions = ({ walletAddress, safeAccount }) => {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Space>
-          <Button type="primary" onClick={() => handleCommit(record)}>Commit</Button>
-          <Button onClick={() => showTransactionDetails(record)}>View</Button>
-        </Space>
+        <Button onClick={() => showTransactionDetails(record)}>View</Button>
       ),
     },
   ];
@@ -90,12 +113,39 @@ const Transactions = ({ walletAddress, safeAccount }) => {
         title="Transaction Details"
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
-        footer={null}
+        footer={
+          <Button type="primary" onClick={() => handleCommit(selectedTransaction)}>
+            Commit
+          </Button>
+        }
       >
         {selectedTransaction && (
-          <pre style={{ margin: 0, maxHeight: '400px', overflow: 'auto' }}>
-            {JSON.stringify(selectedTransaction.transactionDetails, null, 2)}
-          </pre>
+          <Table
+            dataSource={selectedTransaction.transaction_details}
+            columns={[
+              {
+                title: 'Name',
+                dataIndex: 'name',
+                key: 'name',
+              },
+              {
+                title: 'Base',
+                dataIndex: 'base',
+                key: 'base',
+              },
+              {
+                title: 'Bonus',
+                dataIndex: 'bonus',
+                key: 'bonus',
+              },
+              {
+                title: 'Total',
+                dataIndex: 'total',
+                key: 'total',
+              },
+            ]}
+            pagination={false}
+          />
         )}
       </Modal>
     </div>

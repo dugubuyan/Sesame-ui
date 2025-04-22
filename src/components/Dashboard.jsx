@@ -3,6 +3,8 @@ import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message
 import { ArrowUpOutlined, ExclamationOutlined } from '@ant-design/icons';
 import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
 import { getPendingTransactions, commitTrans,getBalance, addFunds } from '../api/trans.js';
+import { useActiveWallet } from "thirdweb/react";
+import { useClient } from '../contexts/ClientContext';
 
 const putSafeAccount = async (safeAddress) => {
   try {
@@ -26,11 +28,13 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [pendingTxModal, setPendingTxModal] = useState(false);
-  const [pendingTxDetails, setPendingTxDetails] = useState(null);
+  // const [pendingTxModal, setPendingTxModal] = useState(false);
+  // const [pendingTxDetails, setPendingTxDetails] = useState(null);
   const [addFundModal, setAddFundModal] = useState(false);
   const [addFundAmount, setAddFundAmount] = useState('');
 
+  const wallet = useActiveWallet();
+  const client = useClient();
   const handleSetAccount = async (values) => {
     try {
       setLoading(true);
@@ -45,25 +49,25 @@ const Dashboard = () => {
     }
   };
 
-  const fetchPendingTxDetails = async (safeAccount) => {
-    try {
-      const pendingTx = await getPendingTransactions(safeAccount);
-      if (pendingTx && pendingTx.length > 0) {
-        const txDetails = pendingTx[0];
-        setPendingTxDetails({
-          safeTxHash: txDetails.safeTxHash,
-          confirmationsRequired: txDetails.confirmationsRequired,
-          confirmationsCount: txDetails.confirmations.length
-        });
-      } else {
-        setPendingTxDetails(null);
-      }
-    } catch (error) {
-      console.error('Failed to fetch pending transactions:', error);
-      message.error('Failed to fetch pending transaction details');
-      setPendingTxDetails(null);
-    }
-  };
+  // const fetchPendingTxDetails = async (safeAccount) => {
+  //   try {
+  //     const pendingTx = await getPendingTransactions(safeAccount);
+  //     if (pendingTx && pendingTx.length > 0) {
+  //       const txDetails = pendingTx[0];
+  //       setPendingTxDetails({
+  //         safeTxHash: txDetails.safeTxHash,
+  //         confirmationsRequired: txDetails.confirmationsRequired,
+  //         confirmationsCount: txDetails.confirmations.length
+  //       });
+  //     } else {
+  //       setPendingTxDetails(null);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch pending transactions:', error);
+  //     message.error('Failed to fetch pending transaction details');
+  //     setPendingTxDetails(null);
+  //   }
+  // };
 
   useEffect(() => {
     const getDashboardData = async () => {
@@ -81,8 +85,11 @@ const Dashboard = () => {
         setTotalEmployees(data.totalEmployees);
         setMonthlyPayroll(data.totalPayroll);
         setSafeAccount(data.safeAccount || '0x0');
-        fetchPendingTxDetails(data.safeAccount);
-        getBalance(data.safeAccount);
+        // fetchPendingTxDetails(data.safeAccount);
+        const bn = await getBalance(data.safeAccount);
+        
+        setBalance(bn);
+        console.log("balance:", balance)
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         message.error('Failed to fetch dashboard data');
@@ -107,29 +114,34 @@ const Dashboard = () => {
     };
   }, []); // 保持空依赖数组，但通过事件监听器响应钱包连接状态
   
-  const handleCommitClick = async (safeAccount) => {
-    if (pendingTxDetails) {
-      setPendingTxModal(true);
-    } else {
-      message.info('No pending transactions found');
-    }
-  };
+  // const handleCommitClick = async (safeAccount) => {
+  //   if (pendingTxDetails) {
+  //     setPendingTxModal(true);
+  //   } else {
+  //     message.info('No pending transactions found');
+  //   }
+  // };
   
-  const handleConfirmCommit = async (safeAccount) => {
-    try {
-      console.log("safeAccount:", safeAccount)
-      await commitTrans(pendingTxDetails.safeTxHash, safeAccount);
-      message.success('Transaction committed successfully');
-      setPendingTxModal(false);
-    } catch (error) {
-      console.error('Failed to commit transaction:', error);
-      message.error('Failed to commit transaction');
-    }
-  };
+  // const handleConfirmCommit = async (safeAccount) => {
+  //   try {
+  //     console.log("safeAccount:", safeAccount)
+  //     await commitTrans(pendingTxDetails.safeTxHash, safeAccount);
+  //     message.success('Transaction committed successfully');
+  //     setPendingTxModal(false);
+  //   } catch (error) {
+  //     console.error('Failed to commit transaction:', error);
+  //     message.error('Failed to commit transaction');
+  //   }
+  // };
   
   const handleAddFund = async () => {
     try {
-      await addFunds(safeAccount);
+      console.log("wallet:", wallet)
+      if (!wallet) {
+        message.error('钱包未连接');
+        return;
+      }
+      await addFunds(client, wallet,safeAccount, addFundAmount);
       message.success('资金添加成功');
       setAddFundModal(false);
       setBalance(addFundAmount);
@@ -220,6 +232,7 @@ const Dashboard = () => {
               prefix="$"
               valueStyle={{ color: '#cf1322' }}
             />
+            <Button type="link" onClick={() => setAddFundModal(true)}>Add Fund</Button>
           </Card>
         </Col>):<Col span={12}>
           <Card title="Add funds to get started">

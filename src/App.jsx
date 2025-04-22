@@ -6,13 +6,9 @@ import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-ro
 import sesameLogo from './assets/sesame-logo.svg';
 import { BinanceCoin, Ethereum } from '@thirdweb-dev/chain-icons';
 import './App.css';
-import { createThirdwebClient } from "thirdweb";
 import { useConnectModal } from "thirdweb/react";
 import '@ant-design/v5-patch-for-react-19';
-
-const client = createThirdwebClient({
-  clientId: "fa21b2ba088ed4d4d7c11fb43a8cd60d",
-});
+import { ClientProvider, useClient } from './contexts/ClientContext';
 
 // 导入组件
 import Dashboard from './components/Dashboard';
@@ -29,7 +25,7 @@ function App() {
   const [userAddress, setUserAddress] = useState('');
   const { connect, isConnecting } = useConnectModal();
   const [selectedChain, setSelectedChain] = useState('');
-
+  const client = useClient();
   useEffect(() => {
     if (!isConnected) {
       localStorage.removeItem('connectedWalletAddress');
@@ -39,7 +35,8 @@ function App() {
 
   async function handleConnect() {
     try {
-      const wallet = await connect( { client,size: "wide",welcomeScreen: {
+      
+      const wallet = await connect( { client, size: "wide", welcomeScreen: {
         title: "Connect Wallet",
         subtitle: "Connecting your wallet is like \"logging in\" to Web3. Select your wallet from the options to get started.",
         description: "Custom Description",
@@ -50,11 +47,12 @@ function App() {
       console.log("connected to", wallet);
       setIsConnected(true);
       const address = wallet.getAccount().address;
+      
       console.log("wallet address", address);
       setUserAddress(address);
       // 保存钱包地址到localStorage
       localStorage.setItem('connectedWalletAddress', address);
-      
+
       // 调用登录接口获取authToken
       await login(address);
       
@@ -243,4 +241,10 @@ function App() {
   );
 }
 
-export default App;
+const AppWithProviders = () => (
+  <ClientProvider>
+    <App />
+  </ClientProvider>
+);
+
+export default AppWithProviders;

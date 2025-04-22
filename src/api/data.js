@@ -242,12 +242,12 @@ export const savePendingTransaction = async (transactionData) => {
     }
   };
 // 获取待处理交易
-export const fetchPendingTransactions = async (walletAddress, safeAccount) => {
-  if (!walletAddress || !safeAccount) {
-    throw new Error('钱包地址和安全账户不能为空');
+export const fetchPendingTransactions = async (walletAddress) => {
+  if (!walletAddress ) {
+    throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}&safeAccount=${safeAccount}`, {
+    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -275,10 +275,10 @@ export const updatePendingTransaction = async (walletAddress, transactionId, sta
     throw new Error('钱包地址和交易ID不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/pending-transactions/${transactionId}`, {
-      method: 'PUT',
+    const response = await fetch(`${BASE_URL}/api/pending-transaction/update`, {
+      method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, status })
+      body: JSON.stringify({ id:transactionId, walletAddress, status })
     });
     const data = await response.json();
     if (data.success) {
