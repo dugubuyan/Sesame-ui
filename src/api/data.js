@@ -226,10 +226,18 @@ export const savePendingTransaction = async (transactionData) => {
       throw new Error('交易数据不能为空');
     }
     try {
+      const { walletAddress, safeAccount, total, transactionDetails, transaction_hash, propose_address } = transactionData;
       const response = await fetch(`${BASE_URL}/api/pending-transaction`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify(transactionData)
+        body: JSON.stringify({
+          walletAddress,
+          safeAccount,
+          total,
+          transactionDetails,
+          transaction_hash,
+          propose_address
+        })
       });
       const data = await response.json();
       if (data.success) {

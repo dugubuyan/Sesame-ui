@@ -81,15 +81,20 @@ const Dashboard = () => {
           clearAuthToken();
           return;
         }
+        console.log("start get board data")
         const data = await fetchDashboardData(walletAddress);
+        console.log("data:", data)
         setTotalEmployees(data.totalEmployees);
         setMonthlyPayroll(data.totalPayroll);
         setSafeAccount(data.safeAccount || '0x0');
+        console.log("safeAccount:", data.safeAccount)
         // fetchPendingTxDetails(data.safeAccount);
-        const bn = await getBalance(data.safeAccount);
+        if(data.safeAccount !== undefined && data.safeAccount != '' ){
+          const bn = await getBalance(data.safeAccount);
+          setBalance(bn);
+          console.log("balance:", bn)
+        }
         
-        setBalance(bn);
-        console.log("balance:", balance)
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         message.error('Failed to fetch dashboard data');
@@ -133,7 +138,13 @@ const Dashboard = () => {
   //     message.error('Failed to commit transaction');
   //   }
   // };
-  
+  const openAddFunds = () => {
+    if(safeAccount === '0x0'){
+      message.error('You haven\'t setted a safe acount yet!');
+      return;
+    }
+    setAddFundModal(true);
+  };
   const handleAddFund = async () => {
     try {
       console.log("wallet:", wallet)
@@ -141,6 +152,7 @@ const Dashboard = () => {
         message.error('钱包未连接');
         return;
       }
+      
       await addFunds(client, wallet,safeAccount, addFundAmount);
       message.success('资金添加成功');
       setAddFundModal(false);
@@ -232,12 +244,12 @@ const Dashboard = () => {
               prefix="$"
               valueStyle={{ color: '#cf1322' }}
             />
-            <Button type="link" onClick={() => setAddFundModal(true)}>Add Fund</Button>
+            <Button type="link" onClick={() => openAddFunds()}>Add Fund</Button>
           </Card>
         </Col>):<Col span={12}>
           <Card title="Add funds to get started">
           Add funds directly to your bank account and then you can pay.
-          <Button type="link" onClick={() => setAddFundModal(true)}>Add Fund</Button>
+          <Button type="link" onClick={() => openAddFunds()}>Add Fund</Button>
           </Card>
         </Col>}
       </Row>

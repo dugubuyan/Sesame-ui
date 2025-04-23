@@ -20,6 +20,7 @@ const Transactions = () => {
     setLoading(true);
     try {
       const data = await fetchPendingTransactions(walletAddress);
+      console.log("data:",data);
       setTransactions(data.transactions || []);
     } catch (error) {
       message.error('Failed to load pending transactions');
@@ -46,22 +47,28 @@ const Transactions = () => {
   const handleCommit = async (record) => {
     // TODO: Implement commit function
     console.log("record:",record)
-    // try {
-    //     const trans = await getPendingTransactions(record.safe_account)
-    //     console.log("pengding transaction:",trans)
-    //     await commitTrans(trans[0].safeTxHash,record.safe_account)
-    // }catch(error){
-    //     message.error('Failed to commit transaction');
-    //     console.error(error);
-    // }
+    try {
+        const trans = await getPendingTransactions(record.safe_account)
+        console.log("pengding transaction:",trans)
+        await commitTrans(trans[0].safeTxHash,record.safe_account)
+    }catch(error){
+        message.error('Failed to commit transaction');
+        console.error(error);
+    }
     // Update the transaction status to "Completed"
     const walletAddress = localStorage.getItem('connectedWalletAddress');
     if (!walletAddress) {
       console.log('Wallet not connected');
       return;
     }
-    await updatePendingTransaction(walletAddress, record.id, "completed")
-    
+    const finished = await updatePendingTransaction(walletAddress, record.id, "completed")
+    if(finished){
+        message.success('Transaction committed successfully');
+        loadTransactions();
+        setModalVisible(false);
+    }else{
+        message.error('Failed to commit transaction');
+    }
   };
 
   const showTransactionDetails = (record) => {
@@ -83,6 +90,12 @@ const Transactions = () => {
       dataIndex: 'total',
       key: 'total',
       render: (total) => `${total}`,
+    },
+    {
+      title: 'Transaction Hash',
+      dataIndex: 'transaction_hash',
+      key: 'transaction_hash',
+      ellipsis: true,
     },
     {
       title: 'Propose Address',
