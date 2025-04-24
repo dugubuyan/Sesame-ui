@@ -41,19 +41,26 @@ const History = () => {
     const columns = [
       {
         title: 'Name',
-        dataIndex: 'name',
-        key: 'name',
+        dataIndex: 'employee_name',
+        key: 'employee_name',
       },
       {
-        title: 'Email',
-        dataIndex: 'email',
-        key: 'email',
+        title: 'Base',
+        dataIndex: 'base_salary',
+        key: 'base_salary',
+        render: (value) => `$${value}`,
+      },
+      {
+        title: 'Bonus',
+        dataIndex: 'bonus',
+        key: 'bonus',
+        render: (value) => `$${value}`,
       },
       {
         title: 'Total',
         dataIndex: 'total',
         key: 'total',
-        render: (value) => `$${value.toLocaleString()}`,
+        render: (value) => `$${value}`,
       },
     ];
 
@@ -69,14 +76,15 @@ const History = () => {
   const columns = [
     {
       title: 'Payment Time',
-      dataIndex: 'paymentTime',
-      key: 'paymentTime',
+      dataIndex: 'payment_time',
+      key: 'payment_time',
+      render: (value) => new Date(value).toLocaleString(),
     },
     {
       title: 'Total Amount',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
-      render: (value) => `$${value.toLocaleString()}`,
+      dataIndex: 'total',
+      key: 'total',
+      render: (value) => `$${value}`,
     },
     {
       title: 'Actions',
@@ -85,7 +93,7 @@ const History = () => {
         <Space>
           <Button
             type="link"
-            onClick={() => window.open(`https://etherscan.io/tx/${record.transactionHash}`, '_blank')}
+            onClick={() => window.open(`https://etherscan.io/tx/${record.transaction_hash}`, '_blank')}
           >
             View Transaction
           </Button>

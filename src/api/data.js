@@ -320,3 +320,28 @@ export const saveSafeAccount = async (walletAddress,safeAddress) => {
     throw error;
   }
 };
+
+// 保存交易历史记录
+export const savePayrollHistory = async (walletAddress, transactionData) => {
+  if (!walletAddress) {
+    throw new Error('钱包地址不能为空');
+  }
+  if (!transactionData) {
+    throw new Error('交易数据不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/payroll/history`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ walletAddress, transactionData })
+    });
+    const data = await response.json();
+    if (data.success) {
+      return true;
+    }
+    throw new Error('保存交易历史记录失败');
+  } catch (error) {
+    console.error('保存交易历史记录失败:', error);
+    throw error;
+  }
+};

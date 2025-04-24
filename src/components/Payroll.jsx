@@ -323,6 +323,7 @@ const Payroll = () => {
       // 准备交易详情
       const transactionDetails = data.map(employee => ({
         name: employee.name,
+        address: employee.address,
         base: employee.baseSalary,
         bonus: employee.bonus,
         total: employee.total

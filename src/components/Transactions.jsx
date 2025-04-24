@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Space, message, Modal, Button } from 'antd';
-import { fetchPendingTransactions, updatePendingTransaction } from '../api/data.js';
+import { fetchPendingTransactions, updatePendingTransaction, savePayrollHistory } from '../api/data.js';
 import { getPendingTransactions,commitTrans } from '../api/trans.js'
 
 const Transactions = () => {
@@ -45,30 +45,60 @@ const Transactions = () => {
   };
 
   const handleCommit = async (record) => {
-    // TODO: Implement commit function
     console.log("record:",record)
+    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    if (!walletAddress) {
+        message.error('Wallet not connected');
+        console.log('Wallet not connected');
+        return;
+    }
     try {
         const trans = await getPendingTransactions(record.safe_account)
         console.log("pengding transaction:",trans)
-        await commitTrans(trans[0].safeTxHash,record.safe_account)
-    }catch(error){
-        message.error('Failed to commit transaction');
+        let matchFound = false;
+        for (const tran of trans) {
+            if (tran.safeTxHash === record.transaction_hash) {
+                matchFound = true;
+                await commitTrans(tran.safeTxHash, record.safe_account);
+                const finished = await updatePendingTransaction(walletAddress, record.id, "completed");
+                if (finished) {
+                    message.success('Transaction committed successfully');
+                } else {
+                    message.error('Failed to update transaction status');
+                }
+                // console.log("process transaction:",trans)
+                const left = tran.confirmationsRequired - tran.confirmations.length;
+                if(left === 1 ){
+                    // 保存交易历史记录
+                    try {
+                        await savePayrollHistory(walletAddress, {
+                            transaction_hash: record.transaction_hash,
+                            safeAccount: record.safe_account,
+                            transactionDetails: record.transaction_details,
+                            propose_address: record.propose_address,
+                            payment_time: record.created_at
+                        });
+                    } catch (historyError) {
+                        console.error('Failed to save transaction history:', historyError);
+                        message.error('Failed to save transaction history');
+                    }
+                }else{
+                    console.log(`Transaction committed successfully, ${left} confirmations left`);
+                    message.success(`Transaction committed successfully, ${left} confirmations left`);
+                }
+                break;
+            }
+        }
+        if (!matchFound) {
+            message.error('No matching transaction found');
+            await updatePendingTransaction(walletAddress, record.id, "failed");
+        }
+    } catch(error) {
+        message.error('Failed to commit transaction:',error);
         console.error(error);
     }
-    // Update the transaction status to "Completed"
-    const walletAddress = localStorage.getItem('connectedWalletAddress');
-    if (!walletAddress) {
-      console.log('Wallet not connected');
-      return;
-    }
-    const finished = await updatePendingTransaction(walletAddress, record.id, "completed")
-    if(finished){
-        message.success('Transaction committed successfully');
-        loadTransactions();
-        setModalVisible(false);
-    }else{
-        message.error('Failed to commit transaction');
-    }
+    loadTransactions();
+    setModalVisible(false);
   };
 
   const showTransactionDetails = (record) => {
