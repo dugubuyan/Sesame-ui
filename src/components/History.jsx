@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Card, Button, Space, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchHistoryData,clearAuthToken } from '../api/data';
+import { fetchPendingTransactions, clearAuthToken } from '../api/data';
 
 const History = () => {
   const navigate = useNavigate();
@@ -15,13 +15,12 @@ const History = () => {
         if (!walletAddress) {
           console.log('钱包未连接');
           setData([]);
-          // 清除认证信息
           clearAuthToken();
           message.error('Wallet not connected');
           return;
         }
         setLoading(true);
-        const result = await fetchHistoryData(walletAddress);
+        const result = await fetchPendingTransactions(walletAddress,1);
         setData(result.transactions.map((transaction, index) => ({
           key: String(index + 1),
           ...transaction
@@ -38,16 +37,17 @@ const History = () => {
   }, []);
 
   const expandedRowRender = (record) => {
+    console.log("record:",record)
     const columns = [
       {
         title: 'Name',
-        dataIndex: 'employee_name',
-        key: 'employee_name',
+        dataIndex: 'name',
+        key: 'name',
       },
       {
         title: 'Base',
-        dataIndex: 'base_salary',
-        key: 'base_salary',
+        dataIndex: 'base',
+        key: 'base',
         render: (value) => `$${value}`,
       },
       {
@@ -67,7 +67,7 @@ const History = () => {
     return (
       <Table
         columns={columns}
-        dataSource={record.employees}
+        dataSource={record.transaction_details}
         pagination={false}
       />
     );
@@ -76,9 +76,9 @@ const History = () => {
   const columns = [
     {
       title: 'Payment Time',
-      dataIndex: 'payment_time',
-      key: 'payment_time',
-      render: (value) => new Date(value).toLocaleString(),
+      dataIndex: 'updated_at',
+      key: 'updated_at',
+      render: (value) => new Date(value).toISOString().split('T')[0],
     },
     {
       title: 'Total Amount',

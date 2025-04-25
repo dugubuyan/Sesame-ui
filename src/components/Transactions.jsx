@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Space, message, Modal, Button } from 'antd';
-import { fetchPendingTransactions, updatePendingTransaction, savePayrollHistory } from '../api/data.js';
+import { fetchPendingTransactions, updatePendingTransaction } from '../api/data.js';
 import { getPendingTransactions,commitTrans } from '../api/trans.js'
 
 const Transactions = () => {
@@ -19,7 +19,7 @@ const Transactions = () => {
     }
     setLoading(true);
     try {
-      const data = await fetchPendingTransactions(walletAddress);
+      const data = await fetchPendingTransactions(walletAddress,0);
       console.log("data:",data);
       setTransactions(data.transactions || []);
     } catch (error) {
@@ -52,6 +52,10 @@ const Transactions = () => {
         console.log('Wallet not connected');
         return;
     }
+    if(record.propose_address === walletAddress){
+        message.error('You don\'t need to commit your own transaction');
+        return;
+    }
     try {
         const trans = await getPendingTransactions(record.safe_account)
         console.log("pengding transaction:",trans)
@@ -60,27 +64,14 @@ const Transactions = () => {
             if (tran.safeTxHash === record.transaction_hash) {
                 matchFound = true;
                 await commitTrans(tran.safeTxHash, record.safe_account);
-                const finished = await updatePendingTransaction(walletAddress, record.id, "completed");
-                if (finished) {
-                    message.success('Transaction committed successfully');
-                } else {
-                    message.error('Failed to update transaction status');
-                }
                 // console.log("process transaction:",trans)
                 const left = tran.confirmationsRequired - tran.confirmations.length;
                 if(left === 1 ){
-                    // 保存交易历史记录
-                    try {
-                        await savePayrollHistory(walletAddress, {
-                            transaction_hash: record.transaction_hash,
-                            safeAccount: record.safe_account,
-                            transactionDetails: record.transaction_details,
-                            propose_address: record.propose_address,
-                            payment_time: record.created_at
-                        });
-                    } catch (historyError) {
-                        console.error('Failed to save transaction history:', historyError);
-                        message.error('Failed to save transaction history');
+                    const finished = await updatePendingTransaction(walletAddress, record.transaction_hash, 1);
+                    if (finished) {
+                        message.success('Transaction committed successfully');
+                    } else {
+                        message.error('Failed to update transaction status');
                     }
                 }else{
                     console.log(`Transaction committed successfully, ${left} confirmations left`);
@@ -91,7 +82,7 @@ const Transactions = () => {
         }
         if (!matchFound) {
             message.error('No matching transaction found');
-            await updatePendingTransaction(walletAddress, record.id, "failed");
+            await updatePendingTransaction(walletAddress, record.transaction_hash, 2);
         }
     } catch(error) {
         message.error('Failed to commit transaction:',error);
@@ -111,9 +102,9 @@ const Transactions = () => {
   const columns = [
     {
       title: 'Propose Time',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (created_at) => new Date(created_at).toLocaleString(),
+      dataIndex: 'updated_at',
+      key: 'updated_at',
+      render: (updated_at) => new Date(updated_at).toLocaleString(),
     },
     {
       title: 'Total',
@@ -128,10 +119,11 @@ const Transactions = () => {
       ellipsis: true,
     },
     {
-      title: 'Propose Address',
+      title: 'Proposer',
       dataIndex: 'propose_address',
       key: 'propose_address',
       ellipsis: true,
+      render: (propose_address, record) => record.proposer || propose_address,
     },
     {
       title: 'Actions',
@@ -144,7 +136,7 @@ const Transactions = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h2>Pending Transactions</h2>
+      <h2>Transactions</h2>
       <Table
         loading={loading}
         columns={columns}

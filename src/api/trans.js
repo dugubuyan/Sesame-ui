@@ -4,9 +4,13 @@ import { sepolia } from 'viem/chains'
 import SafeApiKit from '@safe-global/api-kit'
 import Safe from '@safe-global/protocol-kit'
 import { ethers } from 'ethers'
-import { PAYMENT_CONTRACT_ADDRESS,RPC_URLS,USDT_CONTRACT_ADDRESS } from './constant.js'
+import { PAYMENT_CONTRACT_ADDRESS,RPC_URLS,USDT_CONTRACT_ADDRESS,RUN_ENV } from './constant.js'
+import * as chainApi from './chain.js'
 
-export async function makeTrans(toAddresses, toAmounts, safeAddress) {
+export async function makeTrans(chainId,toAddresses, toAmounts, safeAddress) {
+    if (RUN_ENV === 'dev') {
+        return chainApi.makeTrans(toAddresses, toAmounts, safeAddress);
+    }
     const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
     console.log('account:',account)
     const provider = createWalletClient({
@@ -31,7 +35,7 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
         safeAddress: safeAddress,
         // chainId: Number(network.chainId) // 添加 chainId 参数
       })
-      const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
+      const apiKit = new SafeApiKit({ chainId: chainId }) // Sepolia 测试网
       
       const safeTransaction = await safeSdk.createTransaction({ 
           transactions: [{
@@ -78,6 +82,9 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
 }
 
 export async function getBalance(safeAddress) {
+    if (RUN_ENV === 'dev') {
+        return chainApi.getBalance(safeAddress);
+    }
     const provider = new ethers.JsonRpcProvider(RPC_URLS['sepolia'])
     const contract = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, usdt_abi, provider);
     const bn = await contract.balanceOf(safeAddress);
@@ -87,6 +94,9 @@ export async function getBalance(safeAddress) {
 }
 
 export async function addFunds(client, wallet, safeAddress, ammount) {
+    if (RUN_ENV === 'dev') {
+        return chainApi.addFunds(client, wallet, safeAddress, ammount);
+    }
     const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
     console.log('account:',account)
     const provider = new ethers.BrowserProvider(window.ethereum)
@@ -124,13 +134,19 @@ export async function addFunds(client, wallet, safeAddress, ammount) {
 }
 
 export async function getPendingTransactions(safeAddress) {
+    if (RUN_ENV === 'dev') {
+        return chainApi.getPendingTransactions(safeAddress);
+    }
     const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
     const pendingTransactions = (await apiKit.getPendingTransactions(safeAddress)).results
     console.log("pendingTransactions:", pendingTransactions)    
     return pendingTransactions
 }
 
-export async function commitTrans(safeTxHash, safeAddress) {    
+export async function commitTrans(safeTxHash, safeAddress) {
+    if (RUN_ENV === 'dev') {
+        return chainApi.commitTrans(safeTxHash, safeAddress);
+    }    
     console.log('safeTxHash:',safeTxHash)
     try {
         const account = await window.ethereum.request({ method: 'eth_requestAccounts' });

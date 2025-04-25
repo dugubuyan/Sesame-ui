@@ -319,7 +319,8 @@ const Payroll = () => {
       if (!walletAddress) {
         throw new Error('钱包未连接');
       }
-      const safeTxHash = await makeTrans(toAddresses, toAmounts, safeAccount);
+      const chainId = 11155111;
+      const safeTxHash = await makeTrans(chainId, toAddresses, toAmounts, safeAccount);
       // 准备交易详情
       const transactionDetails = data.map(employee => ({
         name: employee.name,
@@ -336,9 +337,11 @@ const Payroll = () => {
       await savePendingTransaction({
         walletAddress,
         safeAccount,
-        transaction_hash: safeTxHash,
+        chainId,
+        transactionHash: safeTxHash,
         total: totalAmount,
         transactionDetails,
+        proposeAddress: walletAddress,
       });
 
       message.success('交易已发起并保存');

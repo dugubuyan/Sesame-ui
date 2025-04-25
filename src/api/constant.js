@@ -5,4 +5,4 @@ export const RPC_URLS = {
     sepolia: Sepolia_RPC_URL,
     mainnet: Sepolia_RPC_URL
 }
-export const RUN_ENV='production'
+export const RUN_ENV='dev'

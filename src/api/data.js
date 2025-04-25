@@ -226,7 +226,7 @@ export const savePendingTransaction = async (transactionData) => {
       throw new Error('交易数据不能为空');
     }
     try {
-      const { walletAddress, safeAccount, total, transactionDetails, transaction_hash, propose_address } = transactionData;
+      const { walletAddress, safeAccount,chainId, total, transactionDetails, transactionHash, proposeAddress } = transactionData;
       const response = await fetch(`${BASE_URL}/api/pending-transaction`, {
         method: 'POST',
         headers: getHeaders(),
@@ -235,8 +235,9 @@ export const savePendingTransaction = async (transactionData) => {
           safeAccount,
           total,
           transactionDetails,
-          transaction_hash,
-          propose_address
+          chainId,
+          transactionHash,
+          proposeAddress
         })
       });
       const data = await response.json();
@@ -250,12 +251,12 @@ export const savePendingTransaction = async (transactionData) => {
     }
   };
 // 获取待处理交易
-export const fetchPendingTransactions = async (walletAddress) => {
-  if (!walletAddress ) {
+export const fetchPendingTransactions = async (walletAddress, status = 1) => {
+  if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}`, {
+    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}&status=${status}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -278,15 +279,15 @@ export const fetchPendingTransactions = async (walletAddress) => {
 };
 
 // 更新待处理交易状态
-export const updatePendingTransaction = async (walletAddress, transactionId, status) => {
-  if (!walletAddress || !transactionId) {
-    throw new Error('钱包地址和交易ID不能为空');
+export const updatePendingTransaction = async (walletAddress, transaction_hash, status) => {
+  if (!walletAddress || !transaction_hash) {
+    throw new Error('钱包地址和交易HASH不能为空');
   }
   try {
     const response = await fetch(`${BASE_URL}/api/pending-transaction/update`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ id:transactionId, walletAddress, status })
+      body: JSON.stringify({ transaction_hash, walletAddress, status })
     });
     const data = await response.json();
     if (data.success) {
@@ -317,31 +318,6 @@ export const saveSafeAccount = async (walletAddress,safeAddress) => {
     throw new Error('保存Safe Account失败');
   } catch (error) {
     console.error('保存Safe Account失败:', error);
-    throw error;
-  }
-};
-
-// 保存交易历史记录
-export const savePayrollHistory = async (walletAddress, transactionData) => {
-  if (!walletAddress) {
-    throw new Error('钱包地址不能为空');
-  }
-  if (!transactionData) {
-    throw new Error('交易数据不能为空');
-  }
-  try {
-    const response = await fetch(`${BASE_URL}/api/payroll/history`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, transactionData })
-    });
-    const data = await response.json();
-    if (data.success) {
-      return true;
-    }
-    throw new Error('保存交易历史记录失败');
-  } catch (error) {
-    console.error('保存交易历史记录失败:', error);
     throw error;
   }
 };
