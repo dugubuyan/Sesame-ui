@@ -187,3 +187,10 @@ export async function commitTrans(safeTxHash, safeAddress) {
         throw error
     }
 }
+
+export async function getSigners( safeAddress) {
+  const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
+  const safeInfo = await apiKit.getSafeInfo(safeAddress);
+  console.log('签名者:', safeInfo);
+  return safeInfo.owners
+}

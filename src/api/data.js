@@ -301,7 +301,7 @@ export const updatePendingTransaction = async (walletAddress, transaction_hash, 
 };
 
 // 保存Safe Account地址
-export const saveSafeAccount = async (walletAddress,safeAddress) => {
+export const saveSafeAccount = async (walletAddress,safeAddress,signers) => {
   if (!safeAddress) {
     throw new Error('Safe Account地址不能为空');
   }
@@ -309,7 +309,7 @@ export const saveSafeAccount = async (walletAddress,safeAddress) => {
     const response = await fetch(`${BASE_URL}/api/safe-account`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, safeAddress })
+      body: JSON.stringify({ walletAddress, safeAddress,signers })
     });
     const data = await response.json();
     if (data.success) {
