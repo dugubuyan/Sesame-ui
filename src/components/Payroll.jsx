@@ -8,6 +8,7 @@ const Payroll = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [safeAccount, setSafeAccount] = useState('');
+  const [isWorker, setIsWorker] = useState(false);  // 新增state
 
   // 添加获取数据的函数
   const getPayrollData = async () => {
@@ -44,6 +45,7 @@ const Payroll = () => {
         }
         const data = await fetchUserInfo(walletAddress);
         setSafeAccount(data.safeAccount || '');
+        setIsWorker(data.role === 'worker'); // 设置用户角色
       } catch (error) {
         console.error('获取用户信息失败:', error);
         message.error('获取用户信息失败');
@@ -356,10 +358,12 @@ const Payroll = () => {
       <Card 
         title="Payroll Management"
         extra={
-          <Space>
-            <Button type="primary" onClick={handlePay}>Pay</Button>
-            <Button type="primary" onClick={() => navigate('/history')}>View History</Button>
-          </Space>
+          !isWorker && (  // 根据角色控制按钮显示
+            <Space>
+              <Button type="primary" onClick={handlePay}>Pay</Button>
+              <Button type="primary" onClick={() => navigate('/history')}>View History</Button>
+            </Space>
+          )
         }
       >
         <Space style={{ marginBottom: 16 }}>

@@ -6,6 +6,7 @@ const Settings = () => {
   const [form] = Form.useForm();
   const [userName, setUserName] = useState('');
   const [safeAccount, setSafeAccount] = useState('');
+  const [role, setRole] = useState(''); // 新增role状态
   const [isEditing, setIsEditing] = useState(false);
   const [isSafeAccountEditing, setIsSafeAccountEditing] = useState(false);
 
@@ -17,11 +18,13 @@ const Settings = () => {
           console.log('Wallet not connected');
           setUserName('');
           setSafeAccount('');
+          setRole(''); // 重置role
           return;
         }
         const data = await fetchUserInfo(walletAddress);
         setUserName(data.userName || '');
         setSafeAccount(data.safeAccount || '');
+        setRole(data.role || ''); // 设置role
       } catch (error) {
         console.error('Failed to fetch user info:', error);
         message.error(error.message||'Failed to fetch user info');
@@ -138,6 +141,11 @@ const Settings = () => {
                 <Button type="link" onClick={() => setIsSafeAccountEditing(true)}>Edit</Button>
               </Space>
             )}
+          </Form.Item>
+          <Form.Item
+            label="Role"
+          >
+            <span>{role || 'Not set'}</span>
           </Form.Item>
         </Form>
       </Card>
