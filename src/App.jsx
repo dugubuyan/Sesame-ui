@@ -36,9 +36,15 @@ function App() {
       clearAuthToken();
     }
   }, [isConnected]);
+  const checkChain = (chain) => {
+    console.log("chain id:",chain);
+    if(chain === 56 || chain === 11155111){
+      return true;
+    }
+    return false;
+  }
   async function handleConnect() {
     try {
-
       const wallet = await connect( { client, size: "wide", welcomeScreen: {
         title: "Connect Wallet",
         subtitle: "Connecting your wallet is like \"logging in\" to Web3. Select your wallet from the options to get started.",
@@ -48,6 +54,12 @@ function App() {
         }
     }); // opens the connect modal
       console.log("connected to", wallet);
+      const supported = checkChain(wallet.getChain().id)
+      if(!supported){
+        message.error('Unsupported Chain');
+        setIsConnected(false);
+        return;
+      }
       setIsConnected(true);
       const address = wallet.getAccount().address;
       const chain = wallet.getChain()
