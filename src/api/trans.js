@@ -1,26 +1,45 @@
 import {abi,usdt_abi} from './abi.js'
 import { createWalletClient, custom, publicActions } from 'viem';
-import { sepolia } from 'viem/chains'
+import { bsc, sepolia } from 'viem/chains'
+import { extractChain } from 'viem'
 import SafeApiKit from '@safe-global/api-kit'
 import Safe from '@safe-global/protocol-kit'
 import { ethers } from 'ethers'
-import { PAYMENT_CONTRACT_ADDRESS,RPC_URLS,USDT_CONTRACT_ADDRESS,RUN_ENV } from './constant.js'
+import { PAYMENT_CONTRACT_ADDRESS,USDT_CONTRACT_ADDRESS,RUN_ENV } from './constant.js'
 import * as chainApi from './chain.js'
+import { RPC_URLS } from './constant.js'
+
+const getChainInfo = (chainId) => {
+  console.log('chainId:',chainId)
+  // 确保chainId为数字类型
+  const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId
+  console.log('numericChainId:', numericChainId)
+  const chain = extractChain({ chains: [bsc, sepolia], id: numericChainId })
+  console.log('chain:',chain)
+  if (!chain) {
+    throw new Error(`不支持的链ID: ${numericChainId}，目前仅支持BSC和Sepolia链`)
+  }
+  return chain
+}
+
+const getProviderAndSigner = async (chainId) => {
+  const chain = getChainInfo(chainId)
+  const provider = createWalletClient({
+    chain: chain,
+    transport: custom(window.ethereum)
+  }).extend(publicActions);
+  const signers = await provider.getAddresses()
+  const signer = signers[0]
+  console.log('signer',signer)
+  return {provider,signer }
+}
 
 export async function makeTrans(chainId,toAddresses, toAmounts, safeAddress) {
     if (RUN_ENV === 'dev') {
         return chainApi.makeTrans(toAddresses, toAmounts, safeAddress);
     }
-    const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    console.log('account:',account)
-    const provider = createWalletClient({
-      chain: sepolia,
-      transport: custom(window.ethereum)
-    }).extend(publicActions);
-    
-    const signers = await provider.getAddresses()
-    const signer = signers[0]
-    console.log('signer',signer)
+    console.log('chainID:',chainId)
+    const {provider,signer} = await getProviderAndSigner(chainId)
     
     const payment = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, abi, provider)
     
@@ -35,7 +54,7 @@ export async function makeTrans(chainId,toAddresses, toAmounts, safeAddress) {
         safeAddress: safeAddress,
         // chainId: Number(network.chainId) // 添加 chainId 参数
       })
-      const apiKit = new SafeApiKit({ chainId: chainId }) // Sepolia 测试网
+      const apiKit = new SafeApiKit({ chainId: chainId })
       
       const safeTransaction = await safeSdk.createTransaction({ 
           transactions: [{
@@ -81,11 +100,14 @@ export async function makeTrans(chainId,toAddresses, toAmounts, safeAddress) {
       // first owner sign transaction end
 }
 
-export async function getBalance(safeAddress) {
+export async function getBalance(chainId, safeAddress) {
     if (RUN_ENV === 'dev') {
         return chainApi.getBalance(safeAddress);
     }
-    const provider = new ethers.JsonRpcProvider(RPC_URLS['sepolia'])
+    // const {provider} = await getProviderAndSigner(chainId)
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    // const provider = new ethers.JsonRpcProvider(Sepolia_RPC_URL)
+    console.log('provider:',provider)
     const contract = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, usdt_abi, provider);
     const bn = await contract.balanceOf(safeAddress);
     const balance = ethers.formatUnits(bn,6)
@@ -93,28 +115,16 @@ export async function getBalance(safeAddress) {
     return balance
 }
 
-export async function addFunds(client, wallet, safeAddress, ammount) {
+export async function addFunds(chainId, wallet, safeAddress, ammount) {
     if (RUN_ENV === 'dev') {
         return chainApi.addFunds(client, wallet, safeAddress, ammount);
     }
     const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
     console.log('account:',account)
-    const provider = new ethers.BrowserProvider(window.ethereum)
-    const signer = await provider.getSigner()
-    console.log('client:',client)
-    // console.log('address:',wallet.getAccount().address)
-    // const signer = ethers6Adapter.signer.toEthers({
-    //     client,
-    //     chain: sepolia,
-    //     account:wallet.getAccount(),
-    //   });
-    // const eip1193Provider = EIP1193.toProvider({
-    //     wallet,
-    //     chain: sepolia,
-    //     client,
-    //   });
-    //   const provider = new ethers.BrowserProvider(eip1193Provider);
-    
+    // const {signer} = await getProviderAndSigner(chainId)
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    console.log('provider:',provider)
     console.log('signer:',signer)
     console.log('ammount:',ammount)
     const amt = ethers.parseUnits(ammount, 6)
@@ -133,17 +143,17 @@ export async function addFunds(client, wallet, safeAddress, ammount) {
     return receipt2
 }
 
-export async function getPendingTransactions(safeAddress) {
+export async function getPendingTransactions(chainId, safeAddress) {
     if (RUN_ENV === 'dev') {
         return chainApi.getPendingTransactions(safeAddress);
     }
-    const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
+    const apiKit = new SafeApiKit({ chainId: chainId })
     const pendingTransactions = (await apiKit.getPendingTransactions(safeAddress)).results
     console.log("pendingTransactions:", pendingTransactions)    
     return pendingTransactions
 }
 
-export async function commitTrans(safeTxHash, safeAddress) {
+export async function commitTrans(chainId, safeTxHash, safeAddress) {
     if (RUN_ENV === 'dev') {
         return chainApi.commitTrans(safeTxHash, safeAddress);
     }    
@@ -151,13 +161,7 @@ export async function commitTrans(safeTxHash, safeAddress) {
     try {
         const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
         console.log('account:',account)
-        const provider = createWalletClient({   
-          chain: sepolia,
-          transport: custom(window.ethereum)
-        }).extend(publicActions);
-        
-        const signers = await provider.getAddresses()
-        const signer = signers[0]
+        const {provider,signer} = await getProviderAndSigner(chainId)
         console.log('signer',signer)
         // 另一个所有者确认 transaction
         const protocolKitOwner = await Safe.init({ 
@@ -169,7 +173,7 @@ export async function commitTrans(safeTxHash, safeAddress) {
           const signature = await protocolKitOwner.signHash(safeTxHash)
           // 添加所有者2的签名
         //   await safeTransaction.addSignature(signature)
-          const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
+          const apiKit = new SafeApiKit({ chainId }) // Sepolia 测试网
           // Confirm the Safe transaction
           const signatureResponse = await apiKit.confirmTransaction(
               safeTxHash,
@@ -182,15 +186,16 @@ export async function commitTrans(safeTxHash, safeAddress) {
           console.log("executeTransaction:", executeTransaction)
           const receipt = await protocolKitOwner.executeTransaction(executeTransaction)
           console.log('交易已执行:', receipt)
+          return receipt.hash
     } catch (error) {
         console.error('MetaMask连接错误:', error)
         throw error
     }
 }
 
-export async function getSigners( safeAddress) {
-  const apiKit = new SafeApiKit({ chainId: 11155111 }) // Sepolia 测试网
+export async function getSafeSigners(chainId, safeAddress) {
+  const apiKit = new SafeApiKit({ chainId: chainId })
   const safeInfo = await apiKit.getSafeInfo(safeAddress);
   console.log('签名者:', safeInfo);
-  return safeInfo.owners
+  return safeInfo
 }

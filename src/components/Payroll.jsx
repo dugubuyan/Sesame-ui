@@ -10,8 +10,8 @@ const Payroll = () => {
   const [safeAccount, setSafeAccount] = useState('');
   const [isWorker, setIsWorker] = useState(false);  // 新增state
 
-  // 添加获取数据的函数
-  const getPayrollData = async () => {
+  // 使用useCallback包装获取数据的函数
+  const getPayrollData = React.useCallback(async () => {
     try {
       const walletAddress = localStorage.getItem('connectedWalletAddress');
       if (!walletAddress) {
@@ -31,7 +31,7 @@ const Payroll = () => {
       console.error('Failed to fetch payroll data:', error);
       message.error('Failed to fetch payroll data');
     }
-  };
+  }, []);
 
   // 在组件挂载时获取数据
   useEffect(() => {
@@ -41,6 +41,7 @@ const Payroll = () => {
         if (!walletAddress) {
           console.log('钱包未连接');
           setSafeAccount('');
+          setData([]);
           return;
         }
         const data = await fetchUserInfo(walletAddress);
@@ -52,16 +53,23 @@ const Payroll = () => {
       }
     };
 
-    getPayrollData();
-    getUserInfo();
+    const handleWalletConnected = async () => {
+      console.log('Wallet connected');
+      await getPayrollData();
+      await getUserInfo();
+    };
 
-    // 监听钱包连接和断开连接事件
-    const handleWalletConnected = () => {
-      getPayrollData();
-    };
     const handleWalletDisconnected = () => {
+      console.log('Wallet disconnected');
       setData([]);
+      setSafeAccount('');
+      setIsWorker(false);
     };
+
+    // 初始化时获取数据
+    handleWalletConnected();
+
+    // 添加事件监听器
     window.addEventListener('walletConnected', handleWalletConnected);
     window.addEventListener('walletDisconnected', handleWalletDisconnected);
 
@@ -69,7 +77,7 @@ const Payroll = () => {
       window.removeEventListener('walletConnected', handleWalletConnected);
       window.removeEventListener('walletDisconnected', handleWalletDisconnected);
     };
-  }, []);
+  }, [getPayrollData]);
 
   const [data, setData] = useState([]);
 
@@ -309,6 +317,7 @@ const Payroll = () => {
   };
 
   const handlePay = async () => {
+    const hide = message.loading('正在处理支付请求...', 0);
     try {
       const toAddresses = data.map(employee => employee.address);
       const toAmounts = data.map(employee => {
@@ -321,8 +330,11 @@ const Payroll = () => {
       if (!walletAddress) {
         throw new Error('钱包未连接');
       }
-      const chainId = 11155111;
-      const safeTxHash = await makeTrans(chainId, toAddresses, toAmounts, safeAccount);
+      const chainId = localStorage.getItem('chainId');
+      if (!chainId) {
+        throw new Error('链ID未找到');
+      }
+      const safeTxHash = await makeTrans(Number(chainId), toAddresses, toAmounts, safeAccount);
       // 准备交易详情
       const transactionDetails = data.map(employee => ({
         name: employee.name,
@@ -346,8 +358,10 @@ const Payroll = () => {
         proposeAddress: walletAddress,
       });
 
+      hide();
       message.success('交易已发起并保存');
     } catch (error) {
+      hide();
       console.error('发起交易失败:', error);
       message.error('发起交易失败');
     }

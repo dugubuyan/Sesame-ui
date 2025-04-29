@@ -9,14 +9,15 @@ export const clearAuthToken = () => {
 };
 
 // 登录并获取authToken
-export const login = async (walletAddress) => {
+export const login = async (walletAddress, chainId) => {
   try {
+    console.log('登录请求:', walletAddress, chainId); 
     const response = await fetch(`${BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ walletAddress })
+      body: JSON.stringify({ walletAddress, chainId })
     });
     const data = await response.json();
     if (data.success) {
@@ -48,8 +49,9 @@ export const fetchDashboardData = async (walletAddress) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
+  const chainId = localStorage.getItem('chainId');
   try {
-    const response = await fetch(`${BASE_URL}/api/dashboard?walletAddress=${walletAddress}`, {
+    const response = await fetch(`${BASE_URL}/api/dashboard?walletAddress=${walletAddress}&chainId=${chainId}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -69,8 +71,10 @@ export const fetchPayrollData = async (walletAddress) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
+  const chainId = localStorage.getItem('chainId');
+
   try {
-    const response = await fetch(`${BASE_URL}/api/payroll?walletAddress=${walletAddress}`, {
+    const response = await fetch(`${BASE_URL}/api/payroll?walletAddress=${walletAddress}&chainId=${chainId}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -90,8 +94,10 @@ export const fetchHistoryData = async (walletAddress) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
+  const chainId = localStorage.getItem('chainId'); // 获取chainId from local storage
+  console.log('chainId:', chainId); // log the chainId t
   try {
-    const response = await fetch(`${BASE_URL}/api/history?walletAddress=${walletAddress}`, {
+    const response = await fetch(`${BASE_URL}/api/history?walletAddress=${walletAddress}&chainId=${chainId}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -182,8 +188,10 @@ export const fetchUserInfo = async (walletAddress) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
+  const chainId = localStorage.getItem('chainId');
+  
   try {
-    const response = await fetch(`${BASE_URL}/api/user?walletAddress=${walletAddress}`, {
+    const response = await fetch(`${BASE_URL}/api/user?walletAddress=${walletAddress}&chainId=${chainId}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -203,11 +211,12 @@ export const updateUserInfo = async (walletAddress, userInfo) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
+  const chainId = localStorage.getItem('chainId');
   try {
     const response = await fetch(`${BASE_URL}/api/user`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, ...userInfo })
+      body: JSON.stringify({ walletAddress,chainId, ...userInfo })
     });
     const data = await response.json();
     if (data.success) {
@@ -251,12 +260,12 @@ export const savePendingTransaction = async (transactionData) => {
     }
   };
 // 获取待处理交易
-export const fetchPendingTransactions = async (walletAddress, status = 1) => {
+export const fetchPendingTransactions = async (walletAddress, chainId, status = 1) => {
   if (!walletAddress) {
     throw new Error('钱包地址不能为空');
   }
   try {
-    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}&status=${status}`, {
+    const response = await fetch(`${BASE_URL}/api/pending-transactions?walletAddress=${walletAddress}&chainId=${chainId}&status=${status}`, {
       method: 'GET',
       headers: getHeaders()
     });
@@ -279,7 +288,7 @@ export const fetchPendingTransactions = async (walletAddress, status = 1) => {
 };
 
 // 更新待处理交易状态
-export const updatePendingTransaction = async (walletAddress, transaction_hash, status) => {
+export const updatePendingTransaction = async (walletAddress, transaction_hash, status, chainId, commit_hash) => {
   if (!walletAddress || !transaction_hash) {
     throw new Error('钱包地址和交易HASH不能为空');
   }
@@ -287,7 +296,7 @@ export const updatePendingTransaction = async (walletAddress, transaction_hash, 
     const response = await fetch(`${BASE_URL}/api/pending-transaction/update`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ transaction_hash, walletAddress, status })
+      body: JSON.stringify({ transaction_hash, walletAddress, status, chainId, commit_hash })
     });
     const data = await response.json();
     if (data.success) {
@@ -301,7 +310,7 @@ export const updatePendingTransaction = async (walletAddress, transaction_hash, 
 };
 
 // 保存Safe Account地址
-export const saveSafeAccount = async (walletAddress,safeAddress,signers) => {
+export const saveSafeAccount = async (walletAddress, safeAddress, chainId, signers) => {
   if (!safeAddress) {
     throw new Error('Safe Account地址不能为空');
   }
@@ -309,7 +318,7 @@ export const saveSafeAccount = async (walletAddress,safeAddress,signers) => {
     const response = await fetch(`${BASE_URL}/api/safe-account`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, safeAddress,signers })
+      body: JSON.stringify({ walletAddress, safeAddress, chainId, signers })
     });
     const data = await response.json();
     if (data.success) {

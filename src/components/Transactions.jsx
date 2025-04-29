@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Space, message, Modal, Button } from 'antd';
 import { fetchPendingTransactions, updatePendingTransaction } from '../api/data.js';
-import { getPendingTransactions,commitTrans } from '../api/trans.js'
+import { getPendingTransactions,commitTrans,getBalance } from '../api/trans.js'
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -13,13 +13,14 @@ const Transactions = () => {
   // TODO: Implement updateUserInfo function from your API file
   const loadTransactions = async () => {
     const walletAddress = localStorage.getItem('connectedWalletAddress');
-    if (!walletAddress) {
-      console.log('Wallet not connected');
+    const chainId = localStorage.getItem('chainId');
+    if (!walletAddress || !chainId) {
+      console.log('Wallet not connected or chainId not found');
       return;
     }
     setLoading(true);
     try {
-      const data = await fetchPendingTransactions(walletAddress,0);
+      const data = await fetchPendingTransactions(walletAddress,chainId,0);
       console.log("data:",data);
       setTransactions(data.transactions || []);
     } catch (error) {
@@ -43,31 +44,52 @@ const Transactions = () => {
     const { color, text } = statusMap[status] || { color: 'default', text: 'Unknown' };
     return <Tag color={color}>{text}</Tag>;
   };
-
+  const checkPayCondition = async (record) => {
+    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    const chainId = localStorage.getItem('chainId');
+    if (!walletAddress ||!chainId) {
+        message.error('Wallet not connected or chainId not found');
+        console.log('Wallet not connected or chainId not found');
+        return false;
+    }
+    const balance = await getBalance(chainId, walletAddress );
+    console.log("balance:",balance)
+    if (balance < record.total) {
+        return false;
+    }
+    return true;
+  }
   const handleCommit = async (record) => {
     console.log("record:",record)
     const walletAddress = localStorage.getItem('connectedWalletAddress');
-    if (!walletAddress) {
-        message.error('Wallet not connected');
-        console.log('Wallet not connected');
+    const chainId = localStorage.getItem('chainId');
+    if (!walletAddress || !chainId) {
+        message.error('Wallet not connected or chainId not found');
+        console.log('Wallet not connected or chainId not found');
         return;
     }
     if(record.propose_address === walletAddress){
         message.error('You don\'t need to commit your own transaction');
         return;
     }
+    const ok = await checkPayCondition(record);
+    if(!ok){
+        message.error('Not enough balance to pay for this transaction');
+        return;
+    }
+    const hide = message.loading('Processing transaction...', 0);
     try {
-        const trans = await getPendingTransactions(record.safe_account)
+        const trans = await getPendingTransactions(chainId, record.safe_account)
         console.log("pengding transaction:",trans)
         let matchFound = false;
         for (const tran of trans) {
             if (tran.safeTxHash === record.transaction_hash) {
                 matchFound = true;
-                await commitTrans(tran.safeTxHash, record.safe_account);
-                // console.log("process transaction:",trans)
+                const commitHash = await commitTrans(chainId, tran.safeTxHash, record.safe_account);
+                console.log("commit transaction:",commitHash)
                 const left = tran.confirmationsRequired - tran.confirmations.length;
                 if(left === 1 ){
-                    const finished = await updatePendingTransaction(walletAddress, record.transaction_hash, 1);
+                    const finished = await updatePendingTransaction(walletAddress, record.transaction_hash, 1,chainId, commitHash);
                     if (finished) {
                         message.success('Transaction committed successfully');
                     } else {
@@ -81,13 +103,15 @@ const Transactions = () => {
             }
         }
         if (!matchFound) {
-            message.error('No matching transaction found');
-            await updatePendingTransaction(walletAddress, record.transaction_hash, 2);
+            message.info('No matching transaction found');
+            await updatePendingTransaction(walletAddress, record.transaction_hash, 1,chainId, '');
         }
     } catch(error) {
         message.error('Failed to commit transaction:',error);
         console.error(error);
+        hide();
     }
+    hide();
     loadTransactions();
     setModalVisible(false);
   };
@@ -136,7 +160,7 @@ const Transactions = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h2>Transactions</h2>
+      <h2>Pending Transactions</h2>
       <Table
         loading={loading}
         columns={columns}

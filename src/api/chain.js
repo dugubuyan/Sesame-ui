@@ -25,7 +25,7 @@ export async function getBalance(safeAddress) {
     return 10000;
 }
 
-export async function addFunds(client, wallet, safeAddress, ammount) {
+export async function addFunds( wallet, safeAddress, ammount) {
     console.log('Dev环境: addFunds模拟调用');
     console.log('safeAddress:', safeAddress);
     console.log('ammount:', ammount);

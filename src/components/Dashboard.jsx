@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message,Result } from 'antd';
-import { ArrowUpOutlined, ExclamationOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined } from '@ant-design/icons';
 import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
-import { getPendingTransactions, commitTrans,getBalance, addFunds } from '../api/trans.js';
+import { getSafeSigners, getBalance, addFunds } from '../api/trans.js';
 import { useActiveWallet } from "thirdweb/react";
-import { useClient } from '../contexts/ClientContext';
 
 const putSafeAccount = async (safeAddress) => {
   try {
@@ -12,7 +11,15 @@ const putSafeAccount = async (safeAddress) => {
     if (!walletAddress) {
       throw new Error('Wallet not connected');
     }
-    await saveSafeAccount(walletAddress, safeAddress);
+    const chainId = localStorage.getItem('chainId');
+    console.log("chainId:", chainId);
+    const safe = await getSafeSigners(chainId, safeAddress)
+    if(!safe){
+        message.error('Safe account not found');
+        return;
+    }
+    console.log("signers:", safe.owners)
+    await saveSafeAccount(walletAddress, safeAddress,chainId, safe.owners);
     return true;
   } catch (error) {
     console.error('Failed to set Safe Account:', error);
@@ -34,10 +41,11 @@ const Dashboard = () => {
   const [addFundAmount, setAddFundAmount] = useState('');
 
   const wallet = useActiveWallet();
-  const client = useClient();
   const handleSetAccount = async (values) => {
     try {
       setLoading(true);
+      const chainId = localStorage.getItem('chainId');
+      console.log("chainId:", chainId);
       await putSafeAccount(values.safeAccount);
       setSafeAccount(values.safeAccount);
       setIsModalOpen(false);
@@ -69,47 +77,57 @@ const Dashboard = () => {
   //   }
   // };
 
-  useEffect(() => {
-    const getDashboardData = async () => {
-      try {
-        const walletAddress = localStorage.getItem('connectedWalletAddress');
-        if (!walletAddress) {
-          console.log('Wallet not connected');
-          setTotalEmployees(0);
-          setMonthlyPayroll(0);
-          setBalance(0);
-          clearAuthToken();
-          return;
-        }
-        console.log("start get board data")
-        const data = await fetchDashboardData(walletAddress);
-        console.log("data:", data)
-        setTotalEmployees(data.totalEmployees);
-        setMonthlyPayroll(data.totalPayroll);
-        setSafeAccount(data.safeAccount || '0x0');
-        console.log("safeAccount:", data.safeAccount)
-        // fetchPendingTxDetails(data.safeAccount);
-        if(data.safeAccount !== undefined && data.safeAccount != '' ){
-          const bn = await getBalance(data.safeAccount);
-          setBalance(bn);
-          console.log("balance:", bn)
-        }
-        
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-        message.error('Failed to fetch dashboard data');
+  // 使用useCallback包装获取数据的函数
+  const getDashboardData = React.useCallback(async () => {
+    try {
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        console.log('钱包未连接');
+        setTotalEmployees(0);
+        setMonthlyPayroll(0);
+        setBalance(0);
+        clearAuthToken();
+        return;
       }
+      console.log("start get board data")
+      const data = await fetchDashboardData(walletAddress);
+      console.log("data:", data)
+      setTotalEmployees(data.totalEmployees);
+      setMonthlyPayroll(data.totalPayroll);
+      setSafeAccount(data.safeAccount || '0x0');
+      console.log("safeAccount:", data.safeAccount)
+      
+      if(data.safeAccount !== undefined && data.safeAccount !== '') {
+        const chainId = localStorage.getItem('chainId');
+        console.log("getBalance chainId:", chainId);
+        const bn = await getBalance(chainId, data.safeAccount);
+        setBalance(bn);
+        console.log("balance:", bn)
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      message.error('Failed to fetch dashboard data');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleWalletConnected = async () => {
+      console.log('Wallet connected');
+      await getDashboardData();
     };
-    getDashboardData();
-    // 监听钱包连接和断开连接事件
-    const handleWalletConnected = () => {
-      getDashboardData();
-    };
+
     const handleWalletDisconnected = () => {
+      console.log('Wallet disconnected');
       setTotalEmployees(0);
       setMonthlyPayroll(0);
       setBalance(0);
+      setSafeAccount('0x0');
     };
+
+    // 初始化时获取数据
+    handleWalletConnected();
+
+    // 添加事件监听器
     window.addEventListener('walletConnected', handleWalletConnected);
     window.addEventListener('walletDisconnected', handleWalletDisconnected);
 
@@ -117,7 +135,7 @@ const Dashboard = () => {
       window.removeEventListener('walletConnected', handleWalletConnected);
       window.removeEventListener('walletDisconnected', handleWalletDisconnected);
     };
-  }, []); // 保持空依赖数组，但通过事件监听器响应钱包连接状态
+  }, [getDashboardData]); // 添加getDashboardData作为依赖
   
   // const handleCommitClick = async (safeAccount) => {
   //   if (pendingTxDetails) {
@@ -152,8 +170,9 @@ const Dashboard = () => {
         message.error('钱包未连接');
         return;
       }
-      
-      await addFunds(client, wallet,safeAccount, addFundAmount);
+      const chainId = localStorage.getItem('chainId');
+      console.log("chainId:", chainId);
+      await addFunds(chainId, wallet,safeAccount, addFundAmount);
       message.success('资金添加成功');
       setAddFundModal(false);
       setBalance(addFundAmount);

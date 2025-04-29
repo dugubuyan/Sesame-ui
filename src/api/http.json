@@ -1,311 +1,319 @@
 {
-    "api": {
-      "login": {
-        "request": {
-          "method": "POST",
-          "endpoint": "/api/login",
-          "body": {
-            "walletAddress": "string"
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "authToken": "string"
-          }
+  "api": {
+    "login": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/login",
+        "body": {
+          "walletAddress": "string",
+          "chainId": "number"
         }
       },
-      "dashboard": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/dashboard",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string"
-          }
+      "response": {
+        "success": true,
+        "data": {
+          "authToken": "string"
+        }
+      }
+    },
+    "dashboard": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/dashboard",
+        "headers": {
+          "Auth-Token": "string"
         },
-        "response": {
-          "success": true,
-          "data": {
-            "totalEmployees": "number",
-            "totalPayroll": "number",
-            "pendingPayments": "number",
-            "recentTransactions": "array",
-            "safeAccount": "string"
-          }
+        "query": {
+          "walletAddress": "string",
+          "chainId": "number"
         }
       },
-      "payroll": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/payroll",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string"
-          }
+      "response": {
+        "success": true,
+        "data": {
+          "totalEmployees": "number",
+          "totalPayroll": "number",
+          "pendingPayments": "number",
+          "recentTransactions": "array",
+          "safeAccount": "string"
+        }
+      }
+    },
+    "payroll": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/payroll",
+        "headers": {
+          "Auth-Token": "string"
         },
-        "response": {
-          "success": true,
-          "data": {
-            "employees": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": "string",
-                  "name": "string",
-                  "address": "string",
-                  "baseSalary": "number",
-                  "bonus": "number",
-                  "total": "number",
-                  "paymentStatus": "string"
-                }
-              }
-            }
-          }
+        "query": {
+          "walletAddress": "string"
         }
       },
-      "history": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/history",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string"
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "transactions": "array"
-          }
-        }
-      },
-      "members": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/members",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string"
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "members": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": "string",
-                  "name": "string",
-                  "role": "string"
-                }
-              }
-            }
-          }
-        }
-      },
-      "saveEmployee": {
-        "request": {
-          "method": "POST",
-          "endpoint": "/api/employee",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string",
-            "employeeData": {
+      "response": {
+        "success": true,
+        "data": {
+          "employees": {
+            "type": "array",
+            "items": {
               "type": "object",
               "properties": {
                 "id": "string",
                 "name": "string",
                 "address": "string",
                 "baseSalary": "number",
-                "bonus": "number"
-              },
-              "required": ["name", "walletAddress", "baseSalary"]
-            }
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "id": "string",
-            "name": "string",
-            "walletAddress": "string",
-            "baseSalary": "number",
-            "bonus": "number"
-          }
-        }
-      },
-      "saveSafeAccount": {
-        "request": {
-          "method": "POST",
-          "endpoint": "/api/safe-account",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string",
-            "safeAddress": "string"
-          }
-        },
-        "response": {
-          "success": true
-        }
-      },
-      "deleteEmployee": {
-        "request": {
-          "method": "DELETE",
-          "endpoint": "/api/employee/{id}",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string"
-          }
-        },
-        "response": {
-          "success": true
-        }
-      },
-      "getUserInfo": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/user",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string"
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "userName": "string",
-            "safeAccount": "string"
-          }
-        }
-      },
-      "updateUserInfo": {
-        "request": {
-          "method": "PUT",
-          "endpoint": "/api/user",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string",
-            "userName": "string"
-          }
-        },
-        "response": {
-          "success": true
-        }
-      },
-      "getPendingTransactions": {
-        "request": {
-          "method": "GET",
-          "endpoint": "/api/pending-transactions",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "query": {
-            "walletAddress": "string",
-            "status": "number"
-          }
-        },
-        "response": {
-          "success": true,
-          "data": {
-            "transactions": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "id": "string",
-                  "status": "string",
-                  "total": "number",
-                  "propose_address": "string",
-                  "transactionDetails": "object",
-                  "transaction_hash": "string",
-                  "created_at": "string"
-                }
+                "bonus": "number",
+                "total": "number",
+                "paymentStatus": "string"
               }
             }
           }
         }
-      },
-      "savePendingTransaction": {
-        "request": {
-          "method": "POST",
-          "endpoint": "/api/pending-transaction",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string",
-            "safeAccount": "string",
-            "transactionDetails": "object",
-            "transaction_hash": "string",
-            "propose_address": "string",
-            "total": "number"
-          }
+      }
+    },
+    "history": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/history",
+        "headers": {
+          "Auth-Token": "string"
         },
-        "response": {
-          "success": true,
-          "data": {
-            "id": "string",
-            "status": "string",
-            "propose_address": "string",
-            "total": "number",
-            "transaction_hash": "string"
-          }
+        "query": {
+          "walletAddress": "string"
         }
       },
-      "savePayrollHistory": {
-        "request": {
-          "method": "POST",
-          "endpoint": "/api/payroll/history",
-          "headers": {
-            "Auth-Token": "string"
-          },
-          "body": {
-            "walletAddress": "string",
-            "transactionData": {
+      "response": {
+        "success": true,
+        "data": {
+          "transactions": "array"
+        }
+      }
+    },
+    "members": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/members",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "members": {
+            "type": "array",
+            "items": {
               "type": "object",
               "properties": {
-                "safeAccount": "string",
-                "transactionDetails": "object",
-                "transaction_hash": "string",
-                "propose_address": "string",
-                "payment_time": "string"
+                "id": "string",
+                "name": "string",
+                "role": "string"
               }
             }
           }
+        }
+      }
+    },
+    "saveEmployee": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/employee",
+        "headers": {
+          "Auth-Token": "string"
         },
-        "response": {
-          "success": true,
-          "data": {
-            "id": "string",
-            "status": "string",
-            "propose_address": "string",
-            "total": "number",
-            "transaction_hash": "string",
-            "created_at": "string"
+        "body": {
+          "walletAddress": "string",
+          "chainId": "number",
+          "employeeData": {
+            "type": "object",
+            "properties": {
+              "id": "string",
+              "name": "string",
+              "address": "string",
+              "baseSalary": "number",
+              "bonus": "number"
+            },
+            "required": ["name", "walletAddress", "baseSalary"]
           }
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "id": "string",
+          "name": "string",
+          "walletAddress": "string",
+          "baseSalary": "number",
+          "bonus": "number"
+        }
+      }
+    },
+    "saveSafeAccount": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/safe-account",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string",
+          "safeAddress": "string",
+          "chainId": "number"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "deleteEmployee": {
+      "request": {
+        "method": "DELETE",
+        "endpoint": "/api/employee/{id}",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "getUserInfo": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/user",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string",
+          "chainId": "number"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "userName": "string",
+          "safeAccount": "string"
+        }
+      }
+    },
+    "updateUserInfo": {
+      "request": {
+        "method": "PUT",
+        "endpoint": "/api/user",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string",
+          "userName": "string"
+        }
+      },
+      "response": {
+        "success": true
+      }
+    },
+    "getPendingTransactions": {
+      "request": {
+        "method": "GET",
+        "endpoint": "/api/pending-transactions",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "query": {
+          "walletAddress": "string",
+          "safeAccount": "string",
+          "chainId": "number"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": "string",
+                "status": "string",
+                "total": "number",
+                "propose_address": "string",
+                "transactionDetails": "object",
+                "transaction_hash": "string",
+                "created_at": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "savePendingTransaction": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/pending-transaction",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string",
+          "safeAccount": "string",
+          "transactionDetails": "object",
+          "transaction_hash": "string",
+          "propose_address": "string",
+          "total": "number",
+          "chainId": "number",
+          "commit_hash": "string"
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "id": "string",
+          "status": "string",
+          "propose_address": "string",
+          "total": "number",
+          "transaction_hash": "string"
+        }
+      }
+    },
+    "savePayrollHistory": {
+      "request": {
+        "method": "POST",
+        "endpoint": "/api/payroll/history",
+        "headers": {
+          "Auth-Token": "string"
+        },
+        "body": {
+          "walletAddress": "string",
+          "transactionData": {
+            "type": "object",
+            "properties": {
+              "safeAccount": "string",
+              "transactionDetails": "object",
+              "transaction_hash": "string",
+              "propose_address": "string",
+              "payment_time": "string"
+            }
+          }
+        }
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "id": "string",
+          "status": "string",
+          "propose_address": "string",
+          "total": "number",
+          "transaction_hash": "string",
+          "created_at": "string"
         }
       }
     }
   }
+}

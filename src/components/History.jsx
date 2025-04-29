@@ -19,8 +19,10 @@ const History = () => {
           message.error('Wallet not connected');
           return;
         }
+        const chainId = localStorage.getItem('chainId');
         setLoading(true);
-        const result = await fetchPendingTransactions(walletAddress,1);
+
+        const result = await fetchPendingTransactions(walletAddress,chainId, 1);
         setData(result.transactions.map((transaction, index) => ({
           key: String(index + 1),
           ...transaction
@@ -93,7 +95,7 @@ const History = () => {
         <Space>
           <Button
             type="link"
-            onClick={() => window.open(`https://etherscan.io/tx/${record.transaction_hash}`, '_blank')}
+            onClick={() => window.open(`https://sepolia.etherscan.io/tx/${record.commit_hash}`, '_blank')}
           >
             View Transaction
           </Button>
