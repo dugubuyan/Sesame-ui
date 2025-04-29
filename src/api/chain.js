@@ -1,5 +1,3 @@
-import { RUN_ENV } from './constant.js';
-
 function generateRandomHash() {
     const chars = '0123456789abcdef';
     let hash = '0x';
@@ -8,6 +6,15 @@ function generateRandomHash() {
     }
     return hash;
 }
+function storeTransHash(hash) {
+    // 存储hash到本地存储
+    localStorage.setItem('transaction_hash', hash);
+}
+function getStoredTransHash() {
+    // 从本地存储中获取hash
+    return localStorage.getItem('transaction_hash');
+}
+
 let transaction_hash;
 export async function makeTrans(toAddresses, toAmounts, safeAddress) {
     console.log('Dev环境: makeTrans模拟调用');
@@ -15,6 +22,7 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
     console.log('toAmounts:', toAmounts);
     console.log('safeAddress:', safeAddress);
     transaction_hash = generateRandomHash();
+    storeTransHash(transaction_hash);
     console.log('transaction_hash:', transaction_hash);
     return transaction_hash
 }
@@ -22,7 +30,7 @@ export async function makeTrans(toAddresses, toAmounts, safeAddress) {
 export async function getBalance(safeAddress) {
     console.log('Dev环境: getBalance模拟调用');
     console.log('safeAddress:', safeAddress);
-    return 10000;
+    return 100000;
 }
 
 export async function addFunds( wallet, safeAddress, ammount) {
@@ -54,8 +62,8 @@ export async function getPendingTransactions(safeAddress) {
         "submissionDate": "2025-04-24T03:59:48.652207Z",
         "modified": "2025-04-24T03:59:48.752331Z",
         "blockNumber": null,
-        "transactionHash": null,
-        "safeTxHash": "0x771586561f2ea906679fb704b2eee895fc12c14025e86a9d5452282ccc990728",
+        "transactionHash": getStoredTransHash(),
+        "safeTxHash": getStoredTransHash(),
         "proposer": "0x9145CEb6B60b656F28edC11dc26479DEb7e8Bbf5",
         "proposedByDelegate": null,
         "executor": null,
@@ -85,8 +93,27 @@ export async function commitTrans(safeTxHash, safeAddress) {
     console.log('Dev环境: commitTrans模拟调用');
     console.log('safeTxHash:', safeTxHash);
     console.log('safeAddress:', safeAddress);
-    return {
-        hash: generateRandomHash(),
-        success: true
-    };
+    return generateRandomHash()
 }
+
+export async function getSafeSigners(chainId, safeAddress) {
+    console.log('Dev环境: getSafeSigners模拟调用');
+    console.log('chainId:', chainId);
+    console.log('safeAddress:', safeAddress);
+    const safeInfo = {
+        "address": "0x3A51617cc9C3e0FA279B7a563b7dd6195667397A",
+        "nonce": "23",
+        "threshold": 2,
+        "owners": [
+            "0x9145CEb6B60b656F28edC11dc26479DEb7e8Bbf5",
+            "0x7eB944E6f1A513c48DB0BBE7687233aED3ff61DD"
+        ],
+        "modules": [],
+        "fallbackHandler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+        "guard": "0x0000000000000000000000000000000000000000",
+        "version": "1.4.1+L2",
+        "singleton": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"
+    }
+    console.log('签名者:', safeInfo);
+    return safeInfo
+  }

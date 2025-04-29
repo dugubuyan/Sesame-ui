@@ -7,7 +7,6 @@ import Safe from '@safe-global/protocol-kit'
 import { ethers } from 'ethers'
 import { PAYMENT_CONTRACT_ADDRESS,USDT_CONTRACT_ADDRESS,RUN_ENV } from './constant.js'
 import * as chainApi from './chain.js'
-import { RPC_URLS } from './constant.js'
 
 const getChainInfo = (chainId) => {
   console.log('chainId:',chainId)
@@ -194,6 +193,9 @@ export async function commitTrans(chainId, safeTxHash, safeAddress) {
 }
 
 export async function getSafeSigners(chainId, safeAddress) {
+  if (RUN_ENV === 'dev') {
+    return chainApi.getSafeSigners(chainId, safeAddress);
+  }
   const apiKit = new SafeApiKit({ chainId: chainId })
   const safeInfo = await apiKit.getSafeInfo(safeAddress);
   console.log('签名者:', safeInfo);
