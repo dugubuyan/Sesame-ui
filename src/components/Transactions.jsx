@@ -45,14 +45,14 @@ const Transactions = () => {
     return <Tag color={color}>{text}</Tag>;
   };
   const checkPayCondition = async (record) => {
-    const walletAddress = localStorage.getItem('connectedWalletAddress');
+    const walletAddress = localStorage.getItem('connectedWalletAddress')
     const chainId = localStorage.getItem('chainId');
     if (!walletAddress ||!chainId) {
         message.error('Wallet not connected or chainId not found');
         console.log('Wallet not connected or chainId not found');
         return false;
     }
-    const balance = await getBalance(chainId, walletAddress );
+    const balance = await getBalance(chainId, record.safe_account );
     console.log("balance:",balance)
     if (balance < record.total) {
         return false;

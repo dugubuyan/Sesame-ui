@@ -95,7 +95,7 @@ export const fetchHistoryData = async (walletAddress) => {
     throw new Error('钱包地址不能为空');
   }
   const chainId = localStorage.getItem('chainId'); // 获取chainId from local storage
-  console.log('chainId:', chainId); // log the chainId t
+  console.log('chainId:', chainId); // log the chainId
   try {
     const response = await fetch(`${BASE_URL}/api/history?walletAddress=${walletAddress}&chainId=${chainId}`, {
       method: 'GET',
@@ -141,11 +141,13 @@ export const deleteEmployeeData = async (walletAddress, employeeId) => {
   if (!employeeId) {
     throw new Error('员工ID不能为空');
   }
+  const chainId = localStorage.getItem('chainId'); // 获取chainId from local storage
+  console.log('chainId:', chainId); // log the chainId
   try {
     const response = await fetch(`${BASE_URL}/api/employee/${employeeId}`, {
       method: 'DELETE',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress })
+      body: JSON.stringify({ walletAddress, chainId })
     });
     const data = await response.json();
     if (data.success) {
@@ -166,11 +168,16 @@ export const saveEmployeeData = async (walletAddress, employeeData) => {
   if (!employeeData) {
     throw new Error('员工数据不能为空');
   }
+  const chainId = localStorage.getItem('chainId'); // 获取chainId from local storage
+  console.log('chainId:', chainId); // log the chainId
+  if (!chainId) {
+    throw new Error('chainId不能为空');
+  }
   try {
     const response = await fetch(`${BASE_URL}/api/employee`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ walletAddress, employeeData })
+      body: JSON.stringify({ walletAddress, employeeData,chainId })
     });
     const data = await response.json();
     if (data.success) {

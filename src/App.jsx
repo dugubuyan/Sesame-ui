@@ -29,7 +29,6 @@ function App() {
   const [walletType,setWalletType] = useState('');
   const [walletBalance,setWalletBalance] = useState(0);
   const client = useClient();
-  const activeWallet = useActiveWallet();
   useEffect(() => {
     if (!isConnected) {
       localStorage.removeItem('connectedWalletAddress');
