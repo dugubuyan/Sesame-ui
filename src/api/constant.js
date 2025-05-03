@@ -6,4 +6,4 @@ export const RPC_URLS ={
   11155111:Sepolia_RPC_URL,
   56:BSC_RPC_URL
 }
-export const RUN_ENV='dev'
+export const RUN_ENV='production'

@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Space, Button, Form, Input, Popconfirm, message } from 'antd';
+import { Table, Card, Space, Button, Form, Input, Popconfirm, message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo, savePendingTransaction } from '../api/data';
+import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo, savePendingTransaction, fetchTransactionHistory } from '../api/data';
 import {makeTrans} from '../api/trans.js';
 import { ethers } from 'ethers';
 const Payroll = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [safeAccount, setSafeAccount] = useState('');
-  const [isWorker, setIsWorker] = useState(false);  // 新增state
+  const [isWorker, setIsWorker] = useState(false);
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
+  const [transactionHistory, setTransactionHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // 使用useCallback包装获取数据的函数
   const getPayrollData = React.useCallback(async () => {
@@ -186,6 +190,14 @@ const Payroll = () => {
       dataIndex: 'address',
       key: 'address',
       editable: true,
+      render: (text) => (
+        <a onClick={(e) => {
+          e.stopPropagation();
+          showTransactionHistory(text);
+        }}>
+          {text}
+        </a>
+      ),
     },
     {
       title: 'Base',
@@ -367,6 +379,43 @@ const Payroll = () => {
     }
   };
 
+  // 显示交易历史模态框
+  const showTransactionHistory = async (address) => {
+    if (!address) {
+      message.error('地址不能为空');
+      return;
+    }
+    
+    setSelectedAddress(address);
+    setHistoryModalVisible(true);
+    setHistoryLoading(true);
+    
+    try {
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      const chainId = localStorage.getItem('chainId');
+      
+      if (!walletAddress || !chainId || !safeAccount) {
+        throw new Error('缺少必要参数');
+      }
+      
+      const historyData = await fetchTransactionHistory(address,walletAddress, chainId, safeAccount);
+      setTransactionHistory(historyData.transactions || []);
+    } catch (error) {
+      console.error('获取交易历史失败:', error);
+      message.error('获取交易历史失败');
+      setTransactionHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+  
+  // 关闭交易历史模态框
+  const closeHistoryModal = () => {
+    setHistoryModalVisible(false);
+    setSelectedAddress('');
+    setTransactionHistory([]);
+  };
+
   return (
     <div className="payroll">
       <Card 
@@ -397,6 +446,52 @@ const Payroll = () => {
           />
         </Form>
       </Card>
+      
+      {/* 交易历史模态框 */}
+      <Modal
+        title={`交易历史 - ${selectedAddress}`}
+        open={historyModalVisible}
+        onCancel={closeHistoryModal}
+        footer={null}
+        width={800}
+      >
+        <Table
+          loading={historyLoading}
+          dataSource={transactionHistory.map((item, index) => ({
+            ...item,
+            key: index
+          }))}
+          columns={[
+            {
+              title: '交易时间',
+              dataIndex: 'created_at',
+              key: 'created_at',
+              render: (text) => text ? new Date(text).toLocaleString() : '-'
+            },
+            {
+              title: '交易金额',
+              dataIndex: 'amount',
+              key: 'amount',
+              render: (text) => `$${Number(text || 0).toLocaleString()}`
+            }
+          ]}
+          pagination={{
+            pageSize: 5
+          }}
+          summary={pageData => {
+            let total = 0;
+            pageData.forEach(({ amount }) => {
+              total += Number(amount || 0);
+            });
+            return (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0}>Total</Table.Summary.Cell>
+                <Table.Summary.Cell index={1}>${total.toLocaleString()}</Table.Summary.Cell>
+              </Table.Summary.Row>
+            );
+          }}
+        />
+      </Modal>
     </div>
   );
 };

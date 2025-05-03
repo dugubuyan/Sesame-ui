@@ -54,7 +54,7 @@ const Transactions = () => {
     }
     const balance = await getBalance(chainId, record.safe_account );
     console.log("balance:",balance)
-    if (balance < record.total) {
+    if (Number(balance) < Number(record.total) ){
         return false;
     }
     return true;
@@ -104,7 +104,7 @@ const Transactions = () => {
         }
         if (!matchFound) {
             message.info('No matching transaction found');
-            await updatePendingTransaction(walletAddress, record.transaction_hash, 1,chainId, '');
+            await updatePendingTransaction(walletAddress, record.transaction_hash, 3,chainId, '');
         }
     } catch(error) {
         message.error('Failed to commit transaction:',error);

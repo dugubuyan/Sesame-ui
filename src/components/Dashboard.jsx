@@ -164,20 +164,24 @@ const Dashboard = () => {
     setAddFundModal(true);
   };
   const handleAddFund = async () => {
+    const hide = message.loading('添加资金中...', 0);
     try {
       console.log("wallet:", wallet)
       if (!wallet) {
         message.error('钱包未连接');
         return;
       }
+      
       const chainId = localStorage.getItem('chainId');
       console.log("chainId:", chainId);
       await addFunds(chainId, wallet,safeAccount, addFundAmount);
+      hide();
       message.success('资金添加成功');
       setAddFundModal(false);
       setBalance(addFundAmount);
       setAddFundAmount('');
     } catch (error) {
+      hide();
       message.error('添加资金失败: ' + error.message);
     }
   };

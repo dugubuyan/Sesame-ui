@@ -316,6 +316,33 @@ export const updatePendingTransaction = async (walletAddress, transaction_hash, 
   }
 };
 
+// 获取特定地址的交易历史
+export const fetchTransactionHistory = async (address,walletAddress, chainId, safeAccount) => {
+  if (!address) {
+    throw new Error('钱包地址不能为空');
+  }
+  if (!chainId) {
+    throw new Error('链ID不能为空');
+  }
+  if (!safeAccount) {
+    throw new Error('Safe账户不能为空');
+  }
+  try {
+    const response = await fetch(`${BASE_URL}/api/transaction-history?walletAddress=${walletAddress}&address=${address}&chain_id=${chainId}&safe_account=${safeAccount}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    const data = await response.json();
+    if (data.success) {
+      return data.data;
+    }
+    throw new Error('获取交易历史失败');
+  } catch (error) {
+    console.error('获取交易历史失败:', error);
+    throw error;
+  }
+};
+
 // 保存Safe Account地址
 export const saveSafeAccount = async (walletAddress, safeAddress, chainId, signers) => {
   if (!safeAddress) {
