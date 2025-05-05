@@ -1,5 +1,5 @@
 // 从后端获取数据的API接口
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 let authToken = localStorage.getItem('authToken');
 
 // 清除authToken
