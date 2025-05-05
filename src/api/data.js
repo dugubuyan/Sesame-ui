@@ -1,5 +1,7 @@
+import { RUN_ENV } from './constant.js';
+
 // 从后端获取数据的API接口
-const BASE_URL = 'http://localhost:30001';
+const BASE_URL = RUN_ENV === 'production' ? 'http://pay-server:30001' : 'http://localhost:30001';
 let authToken = localStorage.getItem('authToken');
 
 // 清除authToken
