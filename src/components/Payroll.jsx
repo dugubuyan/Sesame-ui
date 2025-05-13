@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Card, Space, Button, Form, Input, Popconfirm, message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { fetchPayrollData, saveEmployeeData, deleteEmployeeData, clearAuthToken, fetchUserInfo, savePendingTransaction, fetchTransactionHistory } from '../api/data';
-import {makeTrans} from '../api/trans.js';
+import {makeProposalPayTrans, getAllowance, makeProposalApproveTrans} from '../api/trans.js';
 import { ethers } from 'ethers';
 const Payroll = () => {
   const navigate = useNavigate();
@@ -327,26 +327,35 @@ const Payroll = () => {
       cell: EditableCell
     }
   };
-
-  const handlePay = async () => {
-    const hide = message.loading('正在处理支付请求...', 0);
-    try {
-      const toAddresses = data.map(employee => employee.address);
-      const toAmounts = data.map(employee => {
-        return ethers.parseUnits(employee.total.toString(), 6)
+  const doApprove = async (walletAddress,chainId,amt) =>{
+    const hide = message.loading('making approve...', 0);
+    try{
+      const amount = ethers.parseUnits(amt.toString(), 6)
+      const safeTxHash = await makeProposalApproveTrans(Number(chainId), amount, safeAccount);
+      const transactionDetails = {}
+      await savePendingTransaction({
+          walletAddress,
+          safeAccount,
+          chainId,
+          transactionHash: safeTxHash,
+          total: amt,
+          transactionDetails,
+          proposeAddress: walletAddress,
       });
-      console.log(toAddresses, toAmounts);
-      
-      // 获取当前用户地址
-      const walletAddress = localStorage.getItem('connectedWalletAddress');
-      if (!walletAddress) {
-        throw new Error('钱包未连接');
-      }
-      const chainId = localStorage.getItem('chainId');
-      if (!chainId) {
-        throw new Error('链ID未找到');
-      }
-      const safeTxHash = await makeTrans(Number(chainId), toAddresses, toAmounts, safeAccount);
+      hide();
+      message.success('make approval proposal success, next you have to wait for other signers to sign');
+    }catch(error) {
+      console.log("approve error:",error)
+      message.error("approve error:",error)
+      hide()
+    }finally{
+      hide()
+    }
+  }
+  const doPay = async(walletAddress,chainId,toAddresses, toAmounts, totalAmount) =>{
+    const hide = message.loading('make payment proposal...', 0);
+    try {
+      const safeTxHash = await makeProposalPayTrans(Number(chainId), toAddresses, toAmounts, safeAccount);
       // 准备交易详情
       const transactionDetails = data.map(employee => ({
         name: employee.name,
@@ -355,9 +364,6 @@ const Payroll = () => {
         bonus: employee.bonus,
         total: employee.total
       }));
-
-      // 计算总金额
-      const totalAmount = transactionDetails.reduce((sum, detail) => Number(sum) + Number(detail.total), 0);
 
       // 保存待处理交易
       await savePendingTransaction({
@@ -377,6 +383,49 @@ const Payroll = () => {
       console.error('发起交易失败:', error);
       message.error('发起交易失败');
     }
+  }
+  const handlePay = async () => {
+    const hide = message.loading('checking allownce...', 0);
+    try{
+      const toAddresses = data.map(employee => employee.address);
+      const toAmounts = data.map(employee => {
+        return ethers.parseUnits(employee.total.toString(), 6)
+      });
+      console.log(toAddresses, toAmounts);
+      // 计算总金额
+      const totalAmount = data.reduce((sum, employee) => sum + Number(employee.total), 0);
+      console.log("totalAmount:  ", totalAmount)
+      // 获取当前用户地址
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (!walletAddress) {
+        message.error('钱包未连接')
+        return
+      }
+      const chainId = localStorage.getItem('chainId');
+      if (!chainId) {
+        message.error('链ID未找到');
+        return 
+      }
+
+      const amt = Number(totalAmount) * 10001 / 10000 
+      console.log("total must be greater than ", amt)
+      const allownce = await getAllowance(Number(chainId),safeAccount)
+      if(Number(allownce) <  Number(amt)){
+        hide()
+        console.log("not enough allownce, to do approval")
+        await doApprove(walletAddress,chainId,amt)
+      }else{
+        hide()
+        console.log("paying...")
+        await doPay(walletAddress,chainId,toAddresses, toAmounts, totalAmount)
+      }
+    }catch(error) {
+      console.log("halepay error:",error)
+      hide()
+    }finally{
+      hide()
+    }
+    
   };
 
   // 显示交易历史模态框

@@ -1,7 +1,15 @@
 .settings {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding: 24px;
+}
+
+@media screen and (min-width: 1201px) {
+  .settings {
+    max-width: 1200px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 .settings .ant-card {

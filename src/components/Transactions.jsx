@@ -7,6 +7,7 @@ const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [approveModalVisible, setApproveModalVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState([]);
   // TODO: Implement fetchPendingTransactions and updatePendingTransaction functions from your API file
   // TODO: Implement fetchUserInfo function from your API file
@@ -44,21 +45,21 @@ const Transactions = () => {
     const { color, text } = statusMap[status] || { color: 'default', text: 'Unknown' };
     return <Tag color={color}>{text}</Tag>;
   };
-  const checkPayCondition = async (record) => {
-    const walletAddress = localStorage.getItem('connectedWalletAddress')
-    const chainId = localStorage.getItem('chainId');
-    if (!walletAddress ||!chainId) {
-        message.error('Wallet not connected or chainId not found');
-        console.log('Wallet not connected or chainId not found');
-        return false;
-    }
-    const balance = await getBalance(chainId, record.safe_account );
-    console.log("balance:",balance)
-    if (Number(balance) < Number(record.total) ){
-        return false;
-    }
-    return true;
-  }
+  // const checkPayCondition = async (record) => {
+  //   const walletAddress = localStorage.getItem('connectedWalletAddress')
+  //   const chainId = localStorage.getItem('chainId');
+  //   if (!walletAddress ||!chainId) {
+  //       message.error('Wallet not connected or chainId not found');
+  //       console.log('Wallet not connected or chainId not found');
+  //       return false;
+  //   }
+  //   const balance = await getBalance(chainId, record.safe_account );
+  //   console.log("balance:",balance)
+  //   if (Number(balance) < Number(record.total) ){
+  //       return false;
+  //   }
+  //   return true;
+  // }
   const handleCommit = async (record) => {
     console.log("record:",record)
     const walletAddress = localStorage.getItem('connectedWalletAddress');
@@ -72,11 +73,11 @@ const Transactions = () => {
         message.error('You don\'t need to commit your own transaction');
         return;
     }
-    const ok = await checkPayCondition(record);
-    if(!ok){
-        message.error('Not enough balance to pay for this transaction');
-        return;
-    }
+    // const ok = await checkPayCondition(record);
+    // if(!ok){
+    //     message.error('Not enough balance to pay for this transaction');
+    //     return;
+    // }
     const hide = message.loading('Processing transaction...', 0);
     try {
         const trans = await getPendingTransactions(chainId, record.safe_account)
@@ -108,10 +109,10 @@ const Transactions = () => {
         }
     } catch(error) {
         message.error('Failed to commit transaction:',error);
-        console.error(error);
-        hide();
+        console.error('Failed to commit transaction:',error);
+    }finally{
+      hide()
     }
-    hide();
     loadTransactions();
     setModalVisible(false);
   };
@@ -120,7 +121,13 @@ const Transactions = () => {
     console.log("record:",record)
     setSelectedTransaction(record);
     console.log("details:",record.transaction_details)
-    setModalVisible(true);
+    const isPayment = record.transaction_details && record.transaction_details.length > 0;
+    if(isPayment){
+      setModalVisible(true);
+    }
+    else {
+      setApproveModalVisible(true);
+    }
   };
 
   const columns = [
@@ -206,6 +213,18 @@ const Transactions = () => {
             pagination={false}
           />
         )}
+      </Modal>
+      <Modal
+        title="Approve USDT"
+        open={approveModalVisible}
+        onCancel={() => setApproveModalVisible(false)}
+        footer={
+          <Button type="primary" onClick={() => handleCommit(selectedTransaction)}>
+            Confirm
+          </Button>
+        }
+      >
+        <p>Are you sure to commit approve ${selectedTransaction.total} USDT?</p>
       </Modal>
     </div>
   );

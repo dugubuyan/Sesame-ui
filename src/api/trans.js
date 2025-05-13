@@ -33,20 +33,46 @@ const getProviderAndSigner = async (chainId) => {
   return {provider,signer }
 }
 
-export async function makeTrans(chainId,toAddresses, toAmounts, safeAddress) {
-    if (RUN_ENV === 'dev') {
-        return chainApi.makeTrans(toAddresses, toAmounts, safeAddress);
-    }
+export async function getAllowance(chainId, safeAddress) {
+  const chain = getChainInfo(chainId)
+  console.log('chain:',chain)
+  const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0])
+  console.log('provider:',provider)
+  const contract = new ethers.Contract(USDT_CONTRACT_ADDRESS, usdt_abi, provider);
+  const bn = await contract.allowance(safeAddress,PAYMENT_CONTRACT_ADDRESS);
+  const balance = ethers.formatUnits(bn,6)
+  console.log(`allowance of ${safeAddress} to ${PAYMENT_CONTRACT_ADDRESS}: ${balance} USDT`);
+  return balance
+}
+
+export async function makeProposalPayTrans(chainId,toAddresses, toAmounts, safeAddress) {
+  if (RUN_ENV === 'dev') {
+      return chainApi.makeTrans(toAddresses, toAmounts, safeAddress);
+  }
     console.log('chainID:',chainId)
     const {provider,signer} = await getProviderAndSigner(chainId)
     
     const payment = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, abi, provider)
     
-    // const toAddresses = ['0x97F28b404EEAf6a00660c113FEd550a23054ae46']
-    // const toAmounts = [ethers.parseUnits("500", 6)]
     const transaction = await payment.payroll.populateTransaction(toAddresses, toAmounts)
     console.log("transaction:",transaction)
-      
+    const safeTxHash = await makeTrans(chainId,provider,signer,transaction, safeAddress)
+    return safeTxHash
+}
+
+export async function makeProposalApproveTrans(chainId, amount, safeAddress) {
+    console.log('chainID:',chainId)
+    const {provider,signer} = await getProviderAndSigner(chainId)
+    
+    const contract = new ethers.Contract(USDT_CONTRACT_ADDRESS, usdt_abi, signer);
+    console.log("contract:",contract)
+    const transaction = await contract.approve.populateTransaction(PAYMENT_CONTRACT_ADDRESS, amount)
+    console.log("transaction:",transaction)
+    const safeTxHash = await makeTrans(chainId,provider,signer,transaction, safeAddress)
+    return safeTxHash
+}
+
+export async function makeTrans(chainId,provider,signer, transaction, safeAddress) {
       const safeSdk = await Safe.init({ 
         provider: provider,
         signer: signer,
@@ -104,14 +130,37 @@ export async function getBalance(chainId, safeAddress) {
         return chainApi.getBalance(safeAddress);
     }
     // const {provider} = await getProviderAndSigner(chainId)
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    // const provider = new ethers.JsonRpcProvider(Sepolia_RPC_URL)
+    const account = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    console.log('account:',account)
+    // const provider = new ethers.BrowserProvider(window.ethereum);
+    const chain = getChainInfo(chainId)
+    const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0])
     console.log('provider:',provider)
     const contract = new ethers.Contract(PAYMENT_CONTRACT_ADDRESS, usdt_abi, provider);
     const bn = await contract.balanceOf(safeAddress);
     const balance = ethers.formatUnits(bn,6)
     console.log(`Balance of ${safeAddress}: ${balance} USDT`);
     return balance
+}
+
+export async function ensureChain(targetChainId) {
+  const currentChainId = parseInt(await window.ethereum.request({ method: 'eth_chainId' }), 16);
+  console.log('currentChainId:',currentChainId)
+  console.log('targetChainId:',targetChainId)
+  const toChainId = Number(targetChainId);
+  console.log('toChainId:',toChainId)
+  if (currentChainId !== toChainId) {
+    console.log('Switching to network:', toChainId);
+      try {
+          await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: `0x${toChainId.toString(16)}` }],
+          });
+      } catch (error) {
+          console.error('Network switch failed:', error);
+          alert('Please switch to network in MetaMask:', `0x${toChainId.toString(16)}`);
+      }
+  }
 }
 
 export async function addFunds(chainId, wallet, safeAddress, ammount) {

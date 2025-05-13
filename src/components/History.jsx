@@ -23,7 +23,11 @@ const History = () => {
         setLoading(true);
 
         const result = await fetchPendingTransactions(walletAddress,chainId, 1);
-        setData(result.transactions.map((transaction, index) => ({
+        // 过滤掉 transaction_details 为空对象的记录
+        const filteredTransactions = result.transactions.filter(transaction => {
+          return transaction.transaction_details && transaction.transaction_details.length > 0;
+        });
+        setData(filteredTransactions.map((transaction, index) => ({
           key: String(index + 1),
           ...transaction
         })));

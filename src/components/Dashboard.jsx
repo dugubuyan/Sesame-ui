@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message,Result } from 'antd';
+import { Card, Row, Col, Statistic, Divider, Modal, Form, Input, Button, message } from 'antd';
 import { ArrowUpOutlined } from '@ant-design/icons';
-import { fetchDashboardData, saveSafeAccount, clearAuthToken } from '../api/data';
-import { getSafeSigners, getBalance, addFunds } from '../api/trans.js';
+import { Link } from 'react-router-dom';
+import { fetchDashboardData, saveSafeAccount, clearAuthToken, fetchPendingTransactions } from '../api/data';
+import { getSafeSigners, getBalance, addFunds, ensureChain } from '../api/trans.js';
 import { useActiveWallet } from "thirdweb/react";
+import { ACCOUNT_PAY } from '../api/constant';
+import { ethers } from 'ethers';
 
 const putSafeAccount = async (safeAddress) => {
   try {
@@ -35,10 +38,9 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  // const [pendingTxModal, setPendingTxModal] = useState(false);
-  // const [pendingTxDetails, setPendingTxDetails] = useState(null);
   const [addFundModal, setAddFundModal] = useState(false);
   const [addFundAmount, setAddFundAmount] = useState('');
+  const [pendingTransactions, setPendingTransactions] = useState([]);
 
   const wallet = useActiveWallet();
   const handleSetAccount = async (values) => {
@@ -81,11 +83,12 @@ const Dashboard = () => {
   const getDashboardData = React.useCallback(async () => {
     try {
       const walletAddress = localStorage.getItem('connectedWalletAddress');
-      if (!walletAddress) {
+      const chainId = localStorage.getItem('chainId');
+      if (!walletAddress || !chainId) {
         console.log('钱包未连接');
         setTotalEmployees(0);
         setMonthlyPayroll(0);
-        setBalance(0);
+        setPendingTransactions([]);
         clearAuthToken();
         return;
       }
@@ -95,15 +98,25 @@ const Dashboard = () => {
       setTotalEmployees(data.totalEmployees);
       setMonthlyPayroll(data.totalPayroll);
       setSafeAccount(data.safeAccount || '0x0');
-      console.log("safeAccount:", data.safeAccount)
       
-      if(data.safeAccount !== undefined && data.safeAccount !== '') {
-        const chainId = localStorage.getItem('chainId');
-        console.log("getBalance chainId:", chainId);
-        const bn = await getBalance(chainId, data.safeAccount);
-        setBalance(bn);
-        console.log("balance:", bn)
-      }
+      // 获取待处理交易
+      const transData = await fetchPendingTransactions(walletAddress, chainId, 0);
+      console.log("pending trsaction:",transData)
+      // 过滤掉propose_address与当前钱包地址相同的交易
+      const filteredTransactions = (transData.transactions || []).filter(tx => tx.propose_address !== walletAddress);
+      setPendingTransactions(filteredTransactions);
+
+      // if(data.safeAccount !== undefined && data.safeAccount !== '') {
+      //   console.log("getBalance chainId:", chainId);
+      //   getBalance(chainId, data.safeAccount).then((bn) => {
+      //     setBalance(bn);
+      //     console.log("balance:", bn)
+      //   }).catch((error) => {
+      //     console.error('Failed to fetch balance:', error);
+      //     message.error('Failed to fetch balance');
+      //     ensureChain(chainId)
+      //   })
+      // }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       message.error('Failed to fetch dashboard data');
@@ -120,7 +133,7 @@ const Dashboard = () => {
       console.log('Wallet disconnected');
       setTotalEmployees(0);
       setMonthlyPayroll(0);
-      setBalance(0);
+      setPendingTransactions([]);
       setSafeAccount('0x0');
     };
 
@@ -257,24 +270,45 @@ const Dashboard = () => {
         </Col>
       </Row>
       <Divider />
-      <h2>Balance</h2>
+      <h2>Todo task</h2>
       <Row gutter={16}>
-        {balance !== 0? (<Col span={6}>
-          <Card>
-            <Statistic
-              value={balance}
-              precision={2}
-              prefix="$"
-              valueStyle={{ color: '#cf1322' }}
-            />
-            <Button type="link" onClick={() => openAddFunds()}>Add Fund</Button>
-          </Card>
-        </Col>):<Col span={12}>
-          <Card title="Add funds to get started">
-          Add funds directly to your bank account and then you can pay.
-          <Button type="link" onClick={() => openAddFunds()}>Add Fund</Button>
-          </Card>
-        </Col>}
+        {balance !== 0 ? (
+          <Col span={6}>
+            <Card>
+              {pendingTransactions.length > 0 ? (
+                <>
+                  <div>You have pending transactions</div>
+                  <Link to="/transactions">View Transactions</Link>
+                </>
+              ) : (
+                <>
+                  <Statistic
+                    value={balance}
+                    precision={2}
+                    prefix="$"
+                    valueStyle={{ color: '#cf1322' }}
+                  />
+                  {ACCOUNT_PAY !== 'SAFE_ADDRESS' && (
+                    <Button type="link" onClick={() => openAddFunds()}>Add Fund</Button>
+                  )}
+                </>
+              )}
+            </Card>
+          </Col>
+        ) : (
+          <Col span={12}>
+            <Card>
+              {pendingTransactions.length > 0 ? (
+                <>
+                  <div>You have pending transactions</div>
+                  <Link to="/transactions">View Transactions</Link>
+                </>
+              ) : (
+                <div>No pending transactions</div>
+              )}
+            </Card>
+          </Col>
+        )}
       </Row>
       <Divider />
       {/* <Row gutter={16}>
