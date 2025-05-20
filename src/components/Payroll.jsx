@@ -346,7 +346,7 @@ const Payroll = () => {
       message.success('make approval proposal success, next you have to wait for other signers to sign');
     }catch(error) {
       console.log("approve error:",error)
-      message.error("approve error:",error)
+      message.error("approve error:")
       hide()
     }finally{
       hide()

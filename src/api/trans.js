@@ -28,6 +28,7 @@ const getProviderAndSigner = async (chainId) => {
     transport: custom(window.ethereum)
   }).extend(publicActions);
   const signers = await provider.getAddresses()
+  console.log("signers:",signers)
   const signer = signers[0]
   console.log('signer',signer)
   return {provider,signer }

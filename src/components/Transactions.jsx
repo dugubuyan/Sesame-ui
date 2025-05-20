@@ -108,7 +108,7 @@ const Transactions = () => {
             await updatePendingTransaction(walletAddress, record.transaction_hash, 3,chainId, '');
         }
     } catch(error) {
-        message.error('Failed to commit transaction:',error);
+        message.error('Failed to commit transaction:');
         console.error('Failed to commit transaction:',error);
     }finally{
       hide()
